@@ -1,24 +1,11 @@
-console.log('Try npm run check/fix!');
+import * as express from 'express';
 
-const longString =
-  'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer ut aliquet diam.';
+const app: express.Application = express();
 
-const trailing = 'Semicolon';
+app.get('/', (req, res) => {
+  res.send('Hello world');
+});
 
-const why = 'am I tabbed?';
-
-export function doSomeStuff(
-  withThis: string,
-  andThat: string,
-  andThose: string[]
-) {
-  //function on one line
-  if (!andThose.length) {
-    return false;
-  }
-  console.log(withThis);
-  console.log(andThat);
-  console.dir(andThose);
-  return;
-}
-// TODO: more examples
+app.listen(3000, () => {
+  console.log('Listen on prot 3000!');
+});
