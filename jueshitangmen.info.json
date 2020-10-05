@@ -1,0 +1,30 @@
+{
+    "name": "绝世唐门阅读",
+    "url": "jueshitangmen.info",
+    "version": 101,
+    "search": {
+        "url": "https://www.jueshitangmen.info/search.html@post->searchtype=all&searchkey=${key}",
+        "list": "div#sitembox > dl",
+        "name": "dd:nth-child(2)",
+        "author": "dd:nth-child(3) > span:first-child",
+        "cover": "img",
+        "summary": "dd.book_des",
+        "detail": "dd:nth-child(2) > h3 > a"
+    },
+    "detail": {
+        "name": "div#info > h1",
+        "author": "div#info > p:nth-child(2) > a",
+        "cover": "div#fmimg img",
+        "summary": "div#intro",
+        "update": "div#info > p:nth-child(4)@match->(?<=：)(.+)",
+        "lastChapter": "div#info > p:nth-child(5) > a"
+    },
+    "catalog": {
+        "list": "div#list > dl > dd",
+        "name": "dd > a",
+        "chapter": "dd > a"
+    },
+    "chapter": {
+       "content": "div#content > p"
+    }
+}
