@@ -149,5 +149,5 @@ app.post('/chapter', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('Listen on prot 3000!');
+  console.log('Listen on port 3000!');
 });
