@@ -5,7 +5,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import {URL} from 'url';
 
-const bookSource = JSON.parse(readFileSync('www.9txs.com.json', 'utf8'));
+const bookSource = JSON.parse(readFileSync('zuopinj.com.json', 'utf8'));
 const app: express.Application = express();
 
 app.use(express.json());
@@ -48,6 +48,7 @@ interface BsExp {
   selector: string;
   replace: ReplaceExp | null;
   attr: string | null;
+  match: string | null;
 }
 
 function genBsExp(exp: string): BsExp {
@@ -56,6 +57,7 @@ function genBsExp(exp: string): BsExp {
     selector: partsExp[0],
     replace: null,
     attr: null,
+    match: null,
   };
   for (let index = 1; index < partsExp.length; index++) {
     const operatorExp = partsExp[index];
@@ -74,6 +76,10 @@ function genBsExp(exp: string): BsExp {
     } else if (parts[0] === 'attr') {
       if (parts.length === 2) {
         result.attr = parts[1];
+      }
+    } else if (parts[0] === 'match') {
+      if (parts.length === 2) {
+        result.match = parts[1];
       }
     }
   }
@@ -122,7 +128,13 @@ function extractData(
 
   if (bsExp.replace) {
     tmp = tmp.replace(bsExp.replace.old, bsExp.replace.new);
+  } else if (bsExp.match) {
+    const matchRes = tmp.match(bsExp.match);
+    if (matchRes) {
+      tmp = matchRes[0];
+    }
   }
+  tmp = tmp.trim();
   return tmp;
 }
 
@@ -151,15 +163,19 @@ app.get('/search', async (req, res) => {
     const $iterator = $(iterator);
     const entry = {name: '', author: '', summary: '', cover: '', detail: ''};
     entry.name = extractData($iterator, bookSource.search.name, 'text');
-    entry.author = extractData($iterator, bookSource.search.author, 'text');
+    if (bookSource.search.author) {
+      entry.author = extractData($iterator, bookSource.search.author, 'text');
+    }
     if (bookSource.search.summary) {
       entry.summary = extractData($iterator, bookSource.search.summary, 'text');
     }
-    const attrCover = extractData($iterator, bookSource.search.cover, 'src');
-    if (attrCover.length === 0) {
-      continue;
-    } else {
-      entry.cover = attrCover;
+    if (bookSource.search.cover) {
+      const attrCover = extractData($iterator, bookSource.search.cover, 'src');
+      if (attrCover.length === 0) {
+        continue;
+      } else {
+        entry.cover = attrCover;
+      }
     }
     let attrDetail = extractData($iterator, bookSource.search.detail, 'href');
     if (attrDetail.length === 0) {
@@ -215,6 +231,9 @@ app.post('/detail', async (req, res) => {
     detailResult.summary = reqData.summary;
   } else {
     detailResult.summary = extractData($, bookSource.detail.summary, 'text');
+  }
+  if (bookSource.detail.status) {
+    detailResult.status = extractData($, bookSource.detail.status, 'text');
   }
   if (bookSource.detail.update) {
     detailResult.update = extractData($, bookSource.detail.update, 'text');
@@ -312,6 +331,13 @@ function needPurify(text: string): boolean {
   return false;
 }
 
+function fillAllP(allP: string[], text: string) {
+  if (needPurify(text)) {
+    return;
+  }
+  allP.push(text);
+}
+
 app.post('/chapter', async (req, res) => {
   const reqData = req.body;
   const response = await axios.get(reqData['url']);
@@ -323,10 +349,16 @@ app.post('/chapter', async (req, res) => {
 
   for (const iterator of $(bookSource.chapter.content).toArray()) {
     const text = $(iterator).text();
-    if (needPurify(text)) {
-      continue;
+    if (text.indexOf('    ') !== -1) {
+      for (const subText of text.split('    ')) {
+        if (subText.length === 0) {
+          continue;
+        }
+        fillAllP(allP, subText);
+      }
+    } else {
+      fillAllP(allP, text);
     }
-    allP.push(text);
   }
   chapterResult.content = allP.join('\n');
   res.json(chapterResult);
