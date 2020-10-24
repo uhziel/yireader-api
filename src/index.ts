@@ -3,7 +3,6 @@ import * as express from 'express';
 import {readFileSync} from 'fs';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import {stringify} from 'querystring';
 import {URL} from 'url';
 
 const bookSource = JSON.parse(readFileSync('jueshitangmen.info.json', 'utf8'));
@@ -16,6 +15,95 @@ app.get('/', (req, res) => {
   res.send('Hello world');
 });
 
+function getSearchUrlStr(url: string): string {
+  const postIndex = url.indexOf('@post->');
+  if (postIndex === -1) {
+    return url;
+  } else {
+    return url.slice(0, postIndex);
+  }
+}
+
+const operatorPost = '@post->';
+async function makeSearchReq(url: string, searchKey: string) {
+  const postIndex = url.indexOf(operatorPost);
+  if (postIndex === -1) {
+    const searchUrlStr: string = url.replace('${key}', searchKey);
+    return axios.get(encodeURI(searchUrlStr));
+  } else {
+    const searchUrlStr = url.slice(0, postIndex);
+    const data = url
+      .slice(postIndex + operatorPost.length)
+      .replace('${key}', searchKey);
+    return axios.post(searchUrlStr, data);
+  }
+}
+
+interface ReplaceExp {
+  old: string;
+  new: string;
+}
+
+interface BsExp {
+  selector: string;
+  replace: ReplaceExp | null;
+}
+
+function genBsExp(exp: string): BsExp {
+  const partsExp = exp.split('@');
+  const result: BsExp = {
+    selector: partsExp[0],
+    replace: null,
+  };
+  for (let index = 1; index < partsExp.length; index++) {
+    const operatorExp = partsExp[index];
+    if (operatorExp.length === 0) {
+      continue;
+    }
+
+    const parts = operatorExp.split('->');
+    if (parts[0] === 'replace') {
+      if (parts.length === 3) {
+        result.replace = {
+          old: parts[1],
+          new: parts[2],
+        };
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * 从 dom 中提取出文本
+ */
+function extractData(
+  $parent: cheerio.Cheerio,
+  exp: string,
+  type: string
+): string {
+  const bsExp = genBsExp(exp);
+  let tmp = '';
+  if (type === 'text') {
+    tmp = $parent.find(bsExp.selector).text();
+  } else if (type === 'href') {
+    const res = $parent.find(bsExp.selector).attr('href');
+    if (res) {
+      tmp = res;
+    }
+  } else if (type === 'src') {
+    const res = $parent.find(bsExp.selector).attr('src');
+    if (res) {
+      tmp = res;
+    }
+  }
+
+  if (bsExp.replace) {
+    tmp = tmp.replace(bsExp.replace.old, bsExp.replace.new);
+  }
+  return tmp;
+}
+
 app.get('/search', async (req, res) => {
   const q = req.query;
   let searchKey = '';
@@ -25,34 +113,36 @@ app.get('/search', async (req, res) => {
     res.status(400).send('Bad Request');
     return;
   }
-  const searchURLStr = 'https://www.jueshitangmen.info/search.html';
-  const response = await axios.post(
-    searchURLStr,
-    stringify({
-      searchtype: 'all',
-      searchkey: searchKey,
-    })
-  );
+  const searchUrlStr = getSearchUrlStr(bookSource.search.url);
+  let response = null;
+  try {
+    response = await makeSearchReq(bookSource.search.url, searchKey);
+  } catch (e) {
+    console.error(e);
+    res.status(500).send('url error');
+    return;
+  }
+
   const $ = cheerio.load(response.data);
   const searchResult = [];
   for (const iterator of $(bookSource.search.list).toArray()) {
     const $iterator = $(iterator);
     const entry = {name: '', author: '', summary: '', cover: '', detail: ''};
-    entry.name = $iterator.find(bookSource.search.name).text();
-    entry.author = $iterator.find(bookSource.search.author).text();
-    entry.summary = $iterator.find(bookSource.search.summary).text();
-    const attrCover = $iterator.find(bookSource.search.cover).attr('src');
-    if (typeof attrCover !== 'string') {
+    entry.name = extractData($iterator, bookSource.search.name, 'text');
+    entry.author = extractData($iterator, bookSource.search.author, 'text');
+    entry.summary = extractData($iterator, bookSource.search.summary, 'text');
+    const attrCover = extractData($iterator, bookSource.search.cover, 'src');
+    if (attrCover.length === 0) {
       continue;
     } else {
       entry.cover = attrCover;
     }
-    let attrDetail = $iterator.find(bookSource.search.detail).attr('href');
-    if (typeof attrDetail !== 'string') {
+    let attrDetail = extractData($iterator, bookSource.search.detail, 'href');
+    if (attrDetail.length === 0) {
       continue;
     } else {
       if (attrDetail.indexOf('/') === 0) {
-        const searchURL = new URL(searchURLStr);
+        const searchURL = new URL(searchUrlStr);
         attrDetail = searchURL.origin + attrDetail;
       }
       entry.detail = attrDetail;
@@ -108,17 +198,35 @@ app.post('/detail', async (req, res) => {
   res.json(detailResult);
 });
 
+interface CatalogEntry {
+  name: string;
+  url: string;
+  useLevel: boolean;
+}
+
+function clearRepeatlyCatalogEntry(catalog: CatalogEntry[]): CatalogEntry[] {
+  let repeatlyIndex = 0;
+  for (let index = 0; index < catalog.length; index++) {
+    if (catalog[index].name === catalog[catalog.length - 1 - index].name) {
+      repeatlyIndex = index;
+    } else {
+      break;
+    }
+  }
+  return catalog.slice(repeatlyIndex + 1);
+}
+
 app.post('/catalog', async (req, res) => {
   const reqData = req.body;
   const response = await axios.get(reqData['catalog']);
   const $ = cheerio.load(response.data);
-  const catalogResult = [];
+  let catalogResult: CatalogEntry[] = [];
   for (const iterator of $(bookSource.catalog.list).toArray()) {
     const $iterator = $(iterator);
     const entry = {name: '', url: '', useLevel: false};
-    entry.name = $iterator.find(bookSource.catalog.name).text();
-    let attrSrc = $iterator.find(bookSource.catalog.chapter).attr('href');
-    if (typeof attrSrc !== 'string') {
+    entry.name = extractData($iterator, bookSource.catalog.name, 'text');
+    let attrSrc = extractData($iterator, bookSource.catalog.chapter, 'href');
+    if (attrSrc.length === 0) {
       continue;
     } else {
       if (attrSrc.indexOf('/') === 0) {
@@ -129,8 +237,24 @@ app.post('/catalog', async (req, res) => {
     }
     catalogResult.push(entry);
   }
+  catalogResult = clearRepeatlyCatalogEntry(catalogResult);
   res.json(catalogResult);
 });
+
+function needPurify(text: string): boolean {
+  if (!(bookSource.chapter.purify instanceof Array)) {
+    return false;
+  }
+
+  for (const regExpStr of bookSource.chapter.purify) {
+    const r = new RegExp(`^${regExpStr}$`);
+    if (r.test(text)) {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 app.post('/chapter', async (req, res) => {
   const reqData = req.body;
@@ -142,7 +266,11 @@ app.post('/chapter', async (req, res) => {
   };
 
   for (const iterator of $(bookSource.chapter.content).toArray()) {
-    allP.push($(iterator).text());
+    const text = $(iterator).text();
+    if (needPurify(text)) {
+      continue;
+    }
+    allP.push(text);
   }
   chapterResult.content = allP.join('\n');
   res.json(chapterResult);

@@ -21,10 +21,14 @@
     },
     "catalog": {
         "list": "div#list > dl > dd",
-        "name": "dd > a",
+        "name": "dd > a@replace->/m.JueShiTangMen.info->",
         "chapter": "dd > a"
     },
     "chapter": {
-       "content": "div#content > p"
+        "content": "div#content > p",
+        "purify": [
+            "牢记本书地址：.+免费全文在线阅读.+",
+            "喜欢.+的小说.+请大家收藏：.+更新速度最快。.+"
+        ]
     }
 }
