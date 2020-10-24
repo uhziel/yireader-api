@@ -5,7 +5,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import {URL} from 'url';
 
-const bookSource = JSON.parse(readFileSync('jueshitangmen.info.json', 'utf8'));
+const bookSource = JSON.parse(readFileSync('www.9txs.com.json', 'utf8'));
 const app: express.Application = express();
 
 app.use(express.json());
@@ -47,6 +47,7 @@ interface ReplaceExp {
 interface BsExp {
   selector: string;
   replace: ReplaceExp | null;
+  attr: string | null;
 }
 
 function genBsExp(exp: string): BsExp {
@@ -54,6 +55,7 @@ function genBsExp(exp: string): BsExp {
   const result: BsExp = {
     selector: partsExp[0],
     replace: null,
+    attr: null,
   };
   for (let index = 1; index < partsExp.length; index++) {
     const operatorExp = partsExp[index];
@@ -69,30 +71,50 @@ function genBsExp(exp: string): BsExp {
           new: parts[2],
         };
       }
+    } else if (parts[0] === 'attr') {
+      if (parts.length === 2) {
+        result.attr = parts[1];
+      }
     }
   }
   return result;
+}
+
+function select(
+  $parent: cheerio.Cheerio | cheerio.Root,
+  selector: string
+): cheerio.Cheerio {
+  if ('find' in $parent) {
+    return $parent.find(selector);
+  } else {
+    return $parent(selector);
+  }
 }
 
 /**
  * 从 dom 中提取出文本
  */
 function extractData(
-  $parent: cheerio.Cheerio,
+  $parent: cheerio.Cheerio | cheerio.Root,
   exp: string,
   type: string
 ): string {
   const bsExp = genBsExp(exp);
   let tmp = '';
-  if (type === 'text') {
-    tmp = $parent.find(bsExp.selector).text();
+  if (bsExp.attr) {
+    const res = select($parent, bsExp.selector).attr(bsExp.attr);
+    if (res) {
+      tmp = res;
+    }
+  } else if (type === 'text') {
+    tmp = select($parent, bsExp.selector).text();
   } else if (type === 'href') {
-    const res = $parent.find(bsExp.selector).attr('href');
+    const res = select($parent, bsExp.selector).attr('href');
     if (res) {
       tmp = res;
     }
   } else if (type === 'src') {
-    const res = $parent.find(bsExp.selector).attr('src');
+    const res = select($parent, bsExp.selector).attr('src');
     if (res) {
       tmp = res;
     }
@@ -130,7 +152,9 @@ app.get('/search', async (req, res) => {
     const entry = {name: '', author: '', summary: '', cover: '', detail: ''};
     entry.name = extractData($iterator, bookSource.search.name, 'text');
     entry.author = extractData($iterator, bookSource.search.author, 'text');
-    entry.summary = extractData($iterator, bookSource.search.summary, 'text');
+    if (bookSource.search.summary) {
+      entry.summary = extractData($iterator, bookSource.search.summary, 'text');
+    }
     const attrCover = extractData($iterator, bookSource.search.cover, 'src');
     if (attrCover.length === 0) {
       continue;
@@ -157,6 +181,7 @@ app.post('/detail', async (req, res) => {
   const reqData = req.body;
   const response = await axios.get(reqData['detail']);
   const $ = cheerio.load(response.data);
+  const origin = new URL(reqData['detail']).origin;
   const detailResult = {
     author: '',
     catalog: '',
@@ -171,17 +196,17 @@ app.post('/detail', async (req, res) => {
   if (reqData.name) {
     detailResult.name = reqData.name;
   } else {
-    detailResult.name = $(bookSource.detail.name).text();
+    detailResult.name = extractData($, bookSource.detail.name, 'text');
   }
   if (reqData.author) {
     detailResult.author = reqData.author;
   } else {
-    detailResult.author = $(bookSource.detail.author).text();
+    detailResult.author = extractData($, bookSource.detail.author, 'text');
   }
   if (reqData.cover) {
     detailResult.cover = reqData.cover;
   } else {
-    const attrCover = $(bookSource.detail.cover).attr('src');
+    const attrCover = extractData($, bookSource.detail.cover, 'src');
     if (typeof attrCover === 'string') {
       detailResult.cover = attrCover;
     }
@@ -189,11 +214,25 @@ app.post('/detail', async (req, res) => {
   if (reqData.summary) {
     detailResult.summary = reqData.summary;
   } else {
-    detailResult.summary = $(bookSource.detail.summary).text();
+    detailResult.summary = extractData($, bookSource.detail.summary, 'text');
   }
-  //TODO bookSource.detail.update
-  detailResult.lastChapter = $(bookSource.detail.lastChapter).text();
-  detailResult.catalog = reqData.detail;
+  if (bookSource.detail.update) {
+    detailResult.update = extractData($, bookSource.detail.update, 'text');
+  }
+  detailResult.lastChapter = extractData(
+    $,
+    bookSource.detail.lastChapter,
+    'text'
+  );
+  if (bookSource.detail.catalog) {
+    detailResult.catalog = extractData($, bookSource.detail.catalog, 'href');
+    if (detailResult.catalog.indexOf('/') === 0) {
+      detailResult.catalog = origin + detailResult.catalog;
+    }
+  } else {
+    detailResult.catalog = reqData.detail;
+  }
+
   detailResult.url = reqData.url;
   res.json(detailResult);
 });
@@ -216,26 +255,43 @@ function clearRepeatlyCatalogEntry(catalog: CatalogEntry[]): CatalogEntry[] {
   return catalog.slice(repeatlyIndex + 1);
 }
 
+function fillCatalogResult(
+  catalogResult: CatalogEntry[],
+  $iterator: cheerio.Cheerio,
+  catalogURLOrigin: string
+) {
+  const entry = {name: '', url: '', useLevel: false};
+  entry.name = extractData($iterator, bookSource.catalog.name, 'text');
+  let attrSrc = extractData($iterator, bookSource.catalog.chapter, 'href');
+  if (attrSrc.length === 0) {
+    return;
+  } else {
+    if (attrSrc.indexOf('/') === 0) {
+      attrSrc = catalogURLOrigin + attrSrc;
+    }
+    entry.url = attrSrc;
+  }
+  catalogResult.push(entry);
+}
+
 app.post('/catalog', async (req, res) => {
   const reqData = req.body;
   const response = await axios.get(reqData['catalog']);
   const $ = cheerio.load(response.data);
   let catalogResult: CatalogEntry[] = [];
+  const catalogURL = new URL(reqData['catalog']);
   for (const iterator of $(bookSource.catalog.list).toArray()) {
     const $iterator = $(iterator);
-    const entry = {name: '', url: '', useLevel: false};
-    entry.name = extractData($iterator, bookSource.catalog.name, 'text');
-    let attrSrc = extractData($iterator, bookSource.catalog.chapter, 'href');
-    if (attrSrc.length === 0) {
-      continue;
-    } else {
-      if (attrSrc.indexOf('/') === 0) {
-        const catalogURL = new URL(reqData['catalog']);
-        attrSrc = catalogURL.origin + attrSrc;
+    if (bookSource.catalog.booklet) {
+      for (const iterator2 of $iterator
+        .find(bookSource.catalog.booklet.list)
+        .toArray()) {
+        const $iterator2 = $(iterator2);
+        fillCatalogResult(catalogResult, $iterator2, catalogURL.origin);
       }
-      entry.url = attrSrc;
+    } else {
+      fillCatalogResult(catalogResult, $iterator, catalogURL.origin);
     }
-    catalogResult.push(entry);
   }
   catalogResult = clearRepeatlyCatalogEntry(catalogResult);
   res.json(catalogResult);
