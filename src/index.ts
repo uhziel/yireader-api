@@ -1,13 +1,11 @@
 /// <reference lib="DOM" />
 import * as express from 'express';
-import {readFileSync} from 'fs';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import {URL} from 'url';
 import bookSourceMgr from './BookSourceMgr';
 import {BookSource} from './BookSourceMgr';
 
-const bookSource = JSON.parse(readFileSync('www.9txs.com.json', 'utf8'));
 const app: express.Application = express();
 
 app.use(express.json());
@@ -292,6 +290,7 @@ function clearRepeatlyCatalogEntry(catalog: CatalogEntry[]): CatalogEntry[] {
 }
 
 function fillCatalogResult(
+  bookSource: BookSource,
   catalogResult: CatalogEntry[],
   $iterator: cheerio.Cheerio,
   catalogURLOrigin: string
@@ -328,10 +327,20 @@ async function handleCatalog(req: express.Request, res: express.Response) {
         .find(bookSource.catalog.booklet.list)
         .toArray()) {
         const $iterator2 = $(iterator2);
-        fillCatalogResult(catalogResult, $iterator2, catalogURL.origin);
+        fillCatalogResult(
+          bookSource,
+          catalogResult,
+          $iterator2,
+          catalogURL.origin
+        );
       }
     } else {
-      fillCatalogResult(catalogResult, $iterator, catalogURL.origin);
+      fillCatalogResult(
+        bookSource,
+        catalogResult,
+        $iterator,
+        catalogURL.origin
+      );
     }
   }
   catalogResult = clearRepeatlyCatalogEntry(catalogResult);
@@ -342,7 +351,7 @@ app.post('/catalog', async (req, res, next) => {
   handleCatalog(req, res).catch(next);
 });
 
-function needPurify(text: string): boolean {
+function needPurify(bookSource: BookSource, text: string): boolean {
   if (!(bookSource.chapter.purify instanceof Array)) {
     return false;
   }
@@ -357,8 +366,8 @@ function needPurify(text: string): boolean {
   return false;
 }
 
-function fillAllP(allP: string[], text: string) {
-  if (needPurify(text)) {
+function fillAllP(bookSource: BookSource, allP: string[], text: string) {
+  if (needPurify(bookSource, text)) {
     return;
   }
   allP.push(text);
@@ -386,10 +395,10 @@ async function handleChapter(req: express.Request, res: express.Response) {
         if (subText.length === 0) {
           continue;
         }
-        fillAllP(allP, subText);
+        fillAllP(bookSource, allP, subText);
       }
     } else {
-      fillAllP(allP, text);
+      fillAllP(bookSource, allP, text);
     }
   }
   chapterResult.content = allP.join('\n');
