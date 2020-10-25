@@ -5,7 +5,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import {URL} from 'url';
 
-const bookSource = JSON.parse(readFileSync('zuopinj.com.json', 'utf8'));
+const bookSource = JSON.parse(readFileSync('www.9txs.com.json', 'utf8'));
 const app: express.Application = express();
 
 app.use(express.json());
@@ -138,7 +138,7 @@ function extractData(
   return tmp;
 }
 
-app.get('/search', async (req, res) => {
+async function handleSearch(req: express.Request, res: express.Response) {
   const q = req.query;
   let searchKey = '';
   if (typeof q['key'] === 'string') {
@@ -148,14 +148,7 @@ app.get('/search', async (req, res) => {
     return;
   }
   const searchUrlStr = getSearchUrlStr(bookSource.search.url);
-  let response = null;
-  try {
-    response = await makeSearchReq(bookSource.search.url, searchKey);
-  } catch (e) {
-    console.error(e);
-    res.status(500).send('url error');
-    return;
-  }
+  const response = await makeSearchReq(bookSource.search.url, searchKey);
 
   const $ = cheerio.load(response.data);
   const searchResult = [];
@@ -190,10 +183,13 @@ app.get('/search', async (req, res) => {
     searchResult.push(entry);
   }
   res.json(searchResult);
+}
+
+app.get('/search', (req, res, next) => {
+  handleSearch(req, res).catch(next);
 });
 
-//{"name":"斗罗大陆4终极斗罗","author":"唐家三少","summary":"一万年后，冰化了。斗罗联邦科考队在极北之地科考时发现了一个有着金银双色花纹的蛋，用仪器探察之后，发现里面居然有生命体征，赶忙将其带回研究所进行孵化。蛋孵化出来了，可孵出来的却是一个婴儿，和人类一模一样的婴儿，一个蛋生的孩子。...","cover":"https://img.jueshitangmen.info/27/264865.jpg","detail":"https://www.jueshitangmen.info/27/"}
-app.post('/detail', async (req, res) => {
+async function handleDetail(req: express.Request, res: express.Response) {
   const reqData = req.body;
   const response = await axios.get(reqData['detail']);
   const $ = cheerio.load(response.data);
@@ -254,6 +250,10 @@ app.post('/detail', async (req, res) => {
 
   detailResult.url = reqData.url;
   res.json(detailResult);
+}
+
+app.post('/detail', async (req, res, next) => {
+  handleDetail(req, res).catch(next);
 });
 
 interface CatalogEntry {
@@ -293,7 +293,7 @@ function fillCatalogResult(
   catalogResult.push(entry);
 }
 
-app.post('/catalog', async (req, res) => {
+async function handleCatalog(req: express.Request, res: express.Response) {
   const reqData = req.body;
   const response = await axios.get(reqData['catalog']);
   const $ = cheerio.load(response.data);
@@ -314,6 +314,10 @@ app.post('/catalog', async (req, res) => {
   }
   catalogResult = clearRepeatlyCatalogEntry(catalogResult);
   res.json(catalogResult);
+}
+
+app.post('/catalog', async (req, res, next) => {
+  handleCatalog(req, res).catch(next);
 });
 
 function needPurify(text: string): boolean {
@@ -338,7 +342,7 @@ function fillAllP(allP: string[], text: string) {
   allP.push(text);
 }
 
-app.post('/chapter', async (req, res) => {
+async function handleChapter(req: express.Request, res: express.Response) {
   const reqData = req.body;
   const response = await axios.get(reqData['url']);
   const $ = cheerio.load(response.data);
@@ -362,6 +366,10 @@ app.post('/chapter', async (req, res) => {
   }
   chapterResult.content = allP.join('\n');
   res.json(chapterResult);
+}
+
+app.post('/chapter', async (req, res, next) => {
+  handleChapter(req, res).catch(next);
 });
 
 app.listen(3000, () => {
