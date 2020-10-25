@@ -2,7 +2,8 @@ FROM node:12-alpine
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
-COPY jueshitangmen.info.json zuopinj.com.json www.9txs.com.json tsconfig.json ./
+COPY tsconfig.json ./
+COPY book_sources ./book_sources
 COPY src ./src
 RUN npx tsc
 EXPOSE 3000
