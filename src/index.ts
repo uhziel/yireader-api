@@ -4,16 +4,14 @@ import {readFileSync} from 'fs';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import {URL} from 'url';
+import bookSourceMgr from './BookSourceMgr';
+import {BookSource} from './BookSourceMgr';
 
 const bookSource = JSON.parse(readFileSync('www.9txs.com.json', 'utf8'));
 const app: express.Application = express();
 
 app.use(express.json());
 app.use(express.static('dist'));
-
-app.get('/', (req, res) => {
-  res.send('Hello world');
-});
 
 function getSearchUrlStr(url: string): string {
   const postIndex = url.indexOf('@post->');
@@ -138,15 +136,7 @@ function extractData(
   return tmp;
 }
 
-async function handleSearch(req: express.Request, res: express.Response) {
-  const q = req.query;
-  let searchKey = '';
-  if (typeof q['key'] === 'string') {
-    searchKey = q['key'];
-  } else {
-    res.status(400).send('Bad Request');
-    return;
-  }
+async function searchOneBookSource(bookSource: BookSource, searchKey: string) {
   const searchUrlStr = getSearchUrlStr(bookSource.search.url);
   const response = await makeSearchReq(bookSource.search.url, searchKey);
 
@@ -182,6 +172,28 @@ async function handleSearch(req: express.Request, res: express.Response) {
     }
     searchResult.push(entry);
   }
+  return searchResult;
+}
+
+async function handleSearch(req: express.Request, res: express.Response) {
+  const q = req.query;
+  let searchKey = '';
+  if (typeof q['key'] === 'string') {
+    searchKey = q['key'];
+  } else {
+    res.status(400).send('Bad Request');
+    return;
+  }
+  const searchResult = [];
+  const bookSources = bookSourceMgr.getAllBookSources();
+  const promises = bookSources.map(bookSource =>
+    searchOneBookSource(bookSource, searchKey)
+  );
+  for (const promise of promises) {
+    const res = await promise;
+    searchResult.push(...res);
+  }
+
   res.json(searchResult);
 }
 
@@ -193,7 +205,12 @@ async function handleDetail(req: express.Request, res: express.Response) {
   const reqData = req.body;
   const response = await axios.get(reqData['detail']);
   const $ = cheerio.load(response.data);
-  const origin = new URL(reqData['detail']).origin;
+  const detailURL = new URL(reqData['detail']);
+  const bookSource = bookSourceMgr.getBookSource(detailURL.hostname);
+  if (!bookSource) {
+    res.status(400).send('Bad Request');
+    return;
+  }
   const detailResult = {
     author: '',
     catalog: '',
@@ -242,7 +259,7 @@ async function handleDetail(req: express.Request, res: express.Response) {
   if (bookSource.detail.catalog) {
     detailResult.catalog = extractData($, bookSource.detail.catalog, 'href');
     if (detailResult.catalog.indexOf('/') === 0) {
-      detailResult.catalog = origin + detailResult.catalog;
+      detailResult.catalog = detailURL.origin + detailResult.catalog;
     }
   } else {
     detailResult.catalog = reqData.detail;
@@ -299,6 +316,11 @@ async function handleCatalog(req: express.Request, res: express.Response) {
   const $ = cheerio.load(response.data);
   let catalogResult: CatalogEntry[] = [];
   const catalogURL = new URL(reqData['catalog']);
+  const bookSource = bookSourceMgr.getBookSource(catalogURL.hostname);
+  if (!bookSource) {
+    res.status(400).send('Bad Request');
+    return;
+  }
   for (const iterator of $(bookSource.catalog.list).toArray()) {
     const $iterator = $(iterator);
     if (bookSource.catalog.booklet) {
@@ -345,6 +367,12 @@ function fillAllP(allP: string[], text: string) {
 async function handleChapter(req: express.Request, res: express.Response) {
   const reqData = req.body;
   const response = await axios.get(reqData['url']);
+  const chapterURL = new URL(reqData['url']);
+  const bookSource = bookSourceMgr.getBookSource(chapterURL.hostname);
+  if (!bookSource) {
+    res.status(400).send('Bad Request');
+    return;
+  }
   const $ = cheerio.load(response.data);
   const allP: string[] = [];
   const chapterResult = {
