@@ -6,5 +6,5 @@ COPY tsconfig.json ./
 COPY book_sources ./book_sources
 COPY src ./src
 RUN npx tsc
-EXPOSE 3000
+EXPOSE 3001
 CMD ["node", "/app/build/src/index.js"]

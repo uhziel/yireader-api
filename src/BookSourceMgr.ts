@@ -1,10 +1,6 @@
 import {readFileSync} from 'fs';
 
-const bookSourceFiles = [
-  'jueshitangmen.info.json',
-  'www.9txs.com.json',
-  'zuopinj.com.json',
-];
+const bookSourceFiles = ['jueshitangmen.info.json', 'www.9txs.com.json'];
 
 interface BookSourceSearch {
   url: string;

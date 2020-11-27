@@ -9,6 +9,8 @@ import bookSourcesRouter from './routes/bookSources';
 
 const app: express.Application = express();
 
+app.disable('x-powered-by');
+
 app.use(express.json());
 app.use(express.static('dist'));
 
@@ -18,6 +20,6 @@ app.use('/catalog', catalogRouter);
 app.use('/chapter', chapterRouter);
 app.use('/booksources', bookSourcesRouter);
 
-app.listen(3000, () => {
-  console.log('Listen on port 3000!');
+app.listen(3001, () => {
+  console.log('Listen on port 3001!');
 });
