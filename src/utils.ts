@@ -1,5 +1,3 @@
-import * as cheerio from 'cheerio';
-
 interface ReplaceExp {
   old: string;
   new: string;
