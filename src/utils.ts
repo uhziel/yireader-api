@@ -1,3 +1,5 @@
+import {value as jpValue} from 'jsonpath';
+
 interface ReplaceExp {
   old: string;
   new: string;
@@ -26,6 +28,7 @@ function genBsExp(exp: string): BsExp {
 
     const parts = operatorExp.split('->');
     if (parts[0] === 'replace') {
+      // @replace->...->... https://chimisgo.gitbook.io/booksource/operator/replace
       if (parts.length === 3) {
         result.replace = {
           old: parts[1],
@@ -33,10 +36,12 @@ function genBsExp(exp: string): BsExp {
         };
       }
     } else if (parts[0] === 'attr') {
+      // @attr->... https://chimisgo.gitbook.io/booksource/operator/attr
       if (parts.length === 2) {
         result.attr = parts[1];
       }
     } else if (parts[0] === 'match') {
+      // @match->... https://chimisgo.gitbook.io/booksource/operator/match
       if (parts.length === 2) {
         result.match = parts[1];
       }
@@ -95,4 +100,28 @@ export function extractData(
   }
   tmp = tmp.trim();
   return tmp;
+}
+
+/**
+ * 从 javascript object 中提取出文本
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function extractJsonData(obj: any, exp: string): string {
+  if (exp.indexOf('$.') === 0) {
+    return jpValue(obj, exp);
+  }
+  const toMap: {[key: string]: string} = {};
+  exp.match(/\$\{\S+?\}/g)?.forEach(function (tmpl) {
+    if (!toMap[tmpl]) {
+      const tmplName = tmpl.slice(2, -1);
+      toMap[tmpl] = jpValue(obj, tmplName);
+    }
+  });
+  for (const key in toMap) {
+    const element = toMap[key];
+    while (exp.indexOf(key) !== -1) {
+      exp = exp.replace(key, element);
+    }
+  }
+  return exp;
 }

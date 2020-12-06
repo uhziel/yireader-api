@@ -1,11 +1,24 @@
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 import {URL} from 'url';
+import {query as jpQuery} from 'jsonpath';
 import {BookSource} from './BookSourceMgr';
-import {extractData} from './utils';
+import {extractData, extractJsonData} from './utils';
 
+interface ResDataSearchEntry {
+  name: string;
+  author: string;
+  summary: string;
+  cover: string;
+  detail: string;
+}
+
+type ResDataSearch = ResDataSearchEntry[];
+
+// @post->... https://chimisgo.gitbook.io/booksource/operator/post
+const operatorPost = '@post->';
 function getSearchUrlStr(url: string): string {
-  const postIndex = url.indexOf('@post->');
+  const postIndex = url.indexOf(operatorPost);
   if (postIndex === -1) {
     return url;
   } else {
@@ -13,7 +26,6 @@ function getSearchUrlStr(url: string): string {
   }
 }
 
-const operatorPost = '@post->';
 async function makeSearchReq(url: string, searchKey: string) {
   const postIndex = url.indexOf(operatorPost);
   if (postIndex === -1) {
@@ -28,12 +40,13 @@ async function makeSearchReq(url: string, searchKey: string) {
   }
 }
 
-export async function parseSearch(bookSource: BookSource, searchKey: string) {
-  const searchUrlStr = getSearchUrlStr(bookSource.search.url);
-  const response = await makeSearchReq(bookSource.search.url, searchKey);
-
-  const $ = cheerio.load(response.data);
-  const searchResult = [];
+function parseSearchHtml(
+  bookSource: BookSource,
+  searchUrlStr: string,
+  responseData: string
+): ResDataSearch {
+  const $ = cheerio.load(responseData);
+  const searchResult: ResDataSearch = [];
   for (const iterator of $(bookSource.search.list).toArray()) {
     const $iterator = $(iterator);
     const entry = {name: '', author: '', summary: '', cover: '', detail: ''};
@@ -65,6 +78,47 @@ export async function parseSearch(bookSource: BookSource, searchKey: string) {
     searchResult.push(entry);
   }
   return searchResult;
+}
+
+function parseSearchJson(
+  bookSource: BookSource,
+  searchUrlStr: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  responseData: any
+): ResDataSearch {
+  const searchResult: ResDataSearch = [];
+  const list = jpQuery(responseData, bookSource.search.list);
+  for (const iterator of list) {
+    const entry = {name: '', author: '', summary: '', cover: '', detail: ''};
+    entry.name = extractJsonData(iterator, bookSource.search.name);
+    if (bookSource.search.author) {
+      entry.author = extractJsonData(iterator, bookSource.search.author);
+    }
+    if (bookSource.search.cover) {
+      entry.cover = extractJsonData(iterator, bookSource.search.cover);
+    }
+    if (bookSource.search.summary) {
+      entry.summary = extractJsonData(iterator, bookSource.search.summary);
+    }
+    entry.detail = extractJsonData(iterator, bookSource.search.detail);
+    searchResult.push(entry);
+  }
+
+  return searchResult;
+}
+
+export async function parseSearch(
+  bookSource: BookSource,
+  searchKey: string
+): Promise<ResDataSearch> {
+  const searchUrlStr = getSearchUrlStr(bookSource.search.url);
+  const response = await makeSearchReq(bookSource.search.url, searchKey);
+
+  if (bookSource.search.list.indexOf('$.') === -1) {
+    return parseSearchHtml(bookSource, searchUrlStr, response.data);
+  } else {
+    return parseSearchJson(bookSource, searchUrlStr, response.data);
+  }
 }
 
 ////////////////////////////////

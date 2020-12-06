@@ -1,6 +1,10 @@
 import {readFileSync} from 'fs';
 
-const bookSourceFiles = ['jueshitangmen.info.json', 'www.9txs.com.json'];
+const bookSourceFiles = [
+  'jueshitangmen.info.json',
+  'www.9txs.com.json',
+  'dlib.wxlib.cn.json',
+];
 
 // 搜索
 interface BookSourceSearch {
