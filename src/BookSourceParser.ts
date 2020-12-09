@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {URL} from 'url';
 import {BookSource} from './BookSourceMgr';
-import createContentBlock, {ContentBlock} from './utils';
+import createContentBlock, {ContentBlock} from './ContentBlock';
 
 interface ResDataSearchEntry {
   name: string;
