@@ -1,4 +1,5 @@
-import {value as jpValue} from 'jsonpath';
+import * as cheerio from 'cheerio';
+import {query as jpQuery, value as jpValue} from 'jsonpath';
 
 interface ReplaceExp {
   old: string;
@@ -124,4 +125,57 @@ export function extractJsonData(obj: any, exp: string): string {
     }
   }
   return exp;
+}
+
+interface ContentBlock {
+  query(exp: string): ContentBlock[];
+  value(exp: string, type: string): string;
+}
+
+class ContentBlockHtml implements ContentBlock {
+  blockData: cheerio.Cheerio;
+  $: cheerio.Root;
+  constructor($: cheerio.Root, data: cheerio.Cheerio) {
+    this.$ = $;
+    this.blockData = data;
+  }
+
+  query(exp: string): ContentBlock[] {
+    const elements = this.blockData.find(exp).toArray();
+    return elements.map(el => new ContentBlockHtml(this.$, this.$(el)));
+  }
+  value(exp: string, type: string) {
+    return extractData(this.blockData, exp, type);
+  }
+}
+
+class ContentBlockJson implements ContentBlock {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  blockData: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(data: any) {
+    this.blockData = data;
+  }
+
+  query(exp: string): ContentBlock[] {
+    const elements = jpQuery(this.blockData, exp);
+    return elements.map(el => new ContentBlockJson(el));
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  value(exp: string, type: string) {
+    return extractJsonData(this.blockData, exp);
+  }
+}
+
+export default function createContentBlock(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  responseData: any
+): ContentBlock | null {
+  if (typeof responseData === 'string') {
+    const $ = cheerio.load(responseData);
+    const $html = $('html');
+    return new ContentBlockHtml($, $html);
+  } else {
+    return new ContentBlockJson(responseData);
+  }
 }

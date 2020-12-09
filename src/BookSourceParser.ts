@@ -1,9 +1,8 @@
 import * as cheerio from 'cheerio';
 import axios from 'axios';
 import {URL} from 'url';
-import {query as jpQuery} from 'jsonpath';
 import {BookSource} from './BookSourceMgr';
-import {extractData, extractJsonData} from './utils';
+import createContentBlock, {extractData} from './utils';
 
 interface ResDataSearchEntry {
   name: string;
@@ -40,32 +39,38 @@ async function makeSearchReq(url: string, searchKey: string) {
   }
 }
 
-function parseSearchHtml(
+export async function parseSearch(
   bookSource: BookSource,
-  searchUrlStr: string,
-  responseData: string
-): ResDataSearch {
-  const $ = cheerio.load(responseData);
+  searchKey: string
+): Promise<ResDataSearch> {
+  const searchUrlStr = getSearchUrlStr(bookSource.search.url);
+  const response = await makeSearchReq(bookSource.search.url, searchKey);
+
   const searchResult: ResDataSearch = [];
-  for (const iterator of $(bookSource.search.list).toArray()) {
-    const $iterator = $(iterator);
+
+  const contentBlock = createContentBlock(response.data);
+  if (!contentBlock) {
+    return searchResult;
+  }
+
+  for (const iterator of contentBlock.query(bookSource.search.list)) {
     const entry = {name: '', author: '', summary: '', cover: '', detail: ''};
-    entry.name = extractData($iterator, bookSource.search.name, 'text');
+    entry.name = iterator.value(bookSource.search.name, 'text');
     if (bookSource.search.author) {
-      entry.author = extractData($iterator, bookSource.search.author, 'text');
+      entry.author = iterator.value(bookSource.search.author, 'text');
     }
     if (bookSource.search.summary) {
-      entry.summary = extractData($iterator, bookSource.search.summary, 'text');
+      entry.summary = iterator.value(bookSource.search.summary, 'text');
     }
     if (bookSource.search.cover) {
-      const attrCover = extractData($iterator, bookSource.search.cover, 'src');
+      const attrCover = iterator.value(bookSource.search.cover, 'src');
       if (attrCover.length === 0) {
         continue;
       } else {
         entry.cover = attrCover;
       }
     }
-    let attrDetail = extractData($iterator, bookSource.search.detail, 'href');
+    let attrDetail = iterator.value(bookSource.search.detail, 'href');
     if (attrDetail.length === 0) {
       continue;
     } else {
@@ -78,47 +83,6 @@ function parseSearchHtml(
     searchResult.push(entry);
   }
   return searchResult;
-}
-
-function parseSearchJson(
-  bookSource: BookSource,
-  searchUrlStr: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  responseData: any
-): ResDataSearch {
-  const searchResult: ResDataSearch = [];
-  const list = jpQuery(responseData, bookSource.search.list);
-  for (const iterator of list) {
-    const entry = {name: '', author: '', summary: '', cover: '', detail: ''};
-    entry.name = extractJsonData(iterator, bookSource.search.name);
-    if (bookSource.search.author) {
-      entry.author = extractJsonData(iterator, bookSource.search.author);
-    }
-    if (bookSource.search.cover) {
-      entry.cover = extractJsonData(iterator, bookSource.search.cover);
-    }
-    if (bookSource.search.summary) {
-      entry.summary = extractJsonData(iterator, bookSource.search.summary);
-    }
-    entry.detail = extractJsonData(iterator, bookSource.search.detail);
-    searchResult.push(entry);
-  }
-
-  return searchResult;
-}
-
-export async function parseSearch(
-  bookSource: BookSource,
-  searchKey: string
-): Promise<ResDataSearch> {
-  const searchUrlStr = getSearchUrlStr(bookSource.search.url);
-  const response = await makeSearchReq(bookSource.search.url, searchKey);
-
-  if (bookSource.search.list.indexOf('$.') === -1) {
-    return parseSearchHtml(bookSource, searchUrlStr, response.data);
-  } else {
-    return parseSearchJson(bookSource, searchUrlStr, response.data);
-  }
 }
 
 ////////////////////////////////
