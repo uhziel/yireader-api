@@ -65,7 +65,7 @@ function select(
 /**
  * 从 dom 中提取出文本
  */
-export function extractData(
+function extractData(
   $parent: cheerio.Cheerio | cheerio.Root,
   exp: string,
   type: string
@@ -107,7 +107,7 @@ export function extractData(
  * 从 javascript object 中提取出文本
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function extractJsonData(obj: any, exp: string): string {
+function extractJsonData(obj: any, exp: string): string {
   if (exp.indexOf('$.') === 0) {
     return jpValue(obj, exp);
   }
@@ -127,9 +127,10 @@ export function extractJsonData(obj: any, exp: string): string {
   return exp;
 }
 
-interface ContentBlock {
+export interface ContentBlock {
   query(exp: string): ContentBlock[];
   value(exp: string, type: string): string;
+  text(): string;
 }
 
 class ContentBlockHtml implements ContentBlock {
@@ -146,6 +147,9 @@ class ContentBlockHtml implements ContentBlock {
   }
   value(exp: string, type: string) {
     return extractData(this.blockData, exp, type);
+  }
+  text() {
+    return this.blockData.text();
   }
 }
 
@@ -164,6 +168,9 @@ class ContentBlockJson implements ContentBlock {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   value(exp: string, type: string) {
     return extractJsonData(this.blockData, exp);
+  }
+  text() {
+    return this.value('$', '');
   }
 }
 

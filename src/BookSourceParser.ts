@@ -1,8 +1,7 @@
-import * as cheerio from 'cheerio';
 import axios from 'axios';
 import {URL} from 'url';
 import {BookSource} from './BookSourceMgr';
-import createContentBlock, {extractData} from './utils';
+import createContentBlock, {ContentBlock} from './utils';
 
 interface ResDataSearchEntry {
   name: string;
@@ -103,7 +102,6 @@ export async function parseDetail(
   reqData: ReqDataDetail
 ) {
   const response = await axios.get(reqData.detail);
-  const $ = cheerio.load(response.data);
   const detailURL = new URL(reqData.detail);
 
   const detailResult = {
@@ -117,41 +115,51 @@ export async function parseDetail(
     update: '',
   };
 
+  const contentBlock = createContentBlock(response.data);
+  if (!contentBlock) {
+    return detailResult;
+  }
+
   if (reqData.name) {
     detailResult.name = reqData.name;
   } else if (bookSource.detail.name) {
-    detailResult.name = extractData($, bookSource.detail.name, 'text');
+    detailResult.name = contentBlock.value(bookSource.detail.name, 'text');
   }
   if (reqData.author) {
     detailResult.author = reqData.author;
   } else if (bookSource.detail.author) {
-    detailResult.author = extractData($, bookSource.detail.author, 'text');
+    detailResult.author = contentBlock.value(bookSource.detail.author, 'text');
   }
   if (reqData.cover) {
     detailResult.cover = reqData.cover;
   } else if (bookSource.detail.cover) {
-    detailResult.cover = extractData($, bookSource.detail.cover, 'src');
+    detailResult.cover = contentBlock.value(bookSource.detail.cover, 'src');
   }
   if (reqData.summary) {
     detailResult.summary = reqData.summary;
   } else if (bookSource.detail.summary) {
-    detailResult.summary = extractData($, bookSource.detail.summary, 'text');
+    detailResult.summary = contentBlock.value(
+      bookSource.detail.summary,
+      'text'
+    );
   }
   if (bookSource.detail.status) {
-    detailResult.status = extractData($, bookSource.detail.status, 'text');
+    detailResult.status = contentBlock.value(bookSource.detail.status, 'text');
   }
   if (bookSource.detail.update) {
-    detailResult.update = extractData($, bookSource.detail.update, 'text');
+    detailResult.update = contentBlock.value(bookSource.detail.update, 'text');
   }
   if (bookSource.detail.lastChapter) {
-    detailResult.lastChapter = extractData(
-      $,
+    detailResult.lastChapter = contentBlock.value(
       bookSource.detail.lastChapter,
       'text'
     );
   }
   if (bookSource.detail.catalog) {
-    detailResult.catalog = extractData($, bookSource.detail.catalog, 'href');
+    detailResult.catalog = contentBlock.value(
+      bookSource.detail.catalog,
+      'href'
+    );
     if (detailResult.catalog.indexOf('/') === 0) {
       detailResult.catalog = detailURL.origin + detailResult.catalog;
     }
@@ -199,12 +207,12 @@ function clearRepeatlyCatalogEntry(catalog: CatalogEntry[]): CatalogEntry[] {
 function fillCatalogResult(
   bookSource: BookSource,
   catalogResult: CatalogEntry[],
-  $iterator: cheerio.Cheerio,
+  contentBlock: ContentBlock,
   catalogURLOrigin: string
 ) {
   const entry = {name: '', url: '', useLevel: false};
-  entry.name = extractData($iterator, bookSource.catalog.name, 'text');
-  let attrSrc = extractData($iterator, bookSource.catalog.chapter, 'href');
+  entry.name = contentBlock.value(bookSource.catalog.name, 'text');
+  let attrSrc = contentBlock.value(bookSource.catalog.chapter, 'href');
   if (attrSrc.length === 0) {
     return;
   } else {
@@ -221,30 +229,24 @@ export async function parseCatalog(
   reqData: ReqDataCatalog
 ) {
   const response = await axios.get(reqData.catalog);
-  const $ = cheerio.load(response.data);
   let catalogResult: CatalogEntry[] = [];
+  const contentBlock = createContentBlock(response.data);
+  if (!contentBlock) {
+    return catalogResult;
+  }
   const catalogURL = new URL(reqData.catalog);
-  for (const iterator of $(bookSource.catalog.list).toArray()) {
-    const $iterator = $(iterator);
+  for (const iterator of contentBlock.query(bookSource.catalog.list)) {
     if (bookSource.catalog.booklet) {
-      for (const iterator2 of $iterator
-        .find(bookSource.catalog.booklet.list)
-        .toArray()) {
-        const $iterator2 = $(iterator2);
+      for (const iterator2 of iterator.query(bookSource.catalog.booklet.list)) {
         fillCatalogResult(
           bookSource,
           catalogResult,
-          $iterator2,
+          iterator2,
           catalogURL.origin
         );
       }
     } else {
-      fillCatalogResult(
-        bookSource,
-        catalogResult,
-        $iterator,
-        catalogURL.origin
-      );
+      fillCatalogResult(bookSource, catalogResult, iterator, catalogURL.origin);
     }
   }
   catalogResult = clearRepeatlyCatalogEntry(catalogResult);
@@ -289,14 +291,23 @@ export async function parseChapter(
   reqData: ReqDataChapter
 ) {
   const response = await axios.get(reqData.url);
-  const $ = cheerio.load(response.data);
   const allP: string[] = [];
   const chapterResult = {
     content: '',
   };
 
-  for (const iterator of $(bookSource.chapter.content).toArray()) {
-    const text = $(iterator).text();
+  const contentBlock = createContentBlock(response.data);
+  if (!contentBlock) {
+    return chapterResult;
+  }
+
+  if (!bookSource.chapter.content) {
+    chapterResult.content = response.data;
+    return chapterResult;
+  }
+
+  for (const iterator of contentBlock.query(bookSource.chapter.content)) {
+    const text = iterator.text();
     if (text.indexOf('    ') !== -1) {
       for (const subText of text.split('    ')) {
         if (subText.length === 0) {
