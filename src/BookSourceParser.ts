@@ -47,7 +47,7 @@ export async function parseSearch(
 
   const searchResult: ResDataSearch = [];
 
-  const contentBlock = createContentBlock(response.data);
+  const contentBlock = createContentBlock('', response.data);
   if (!contentBlock) {
     return searchResult;
   }
@@ -115,7 +115,7 @@ export async function parseDetail(
     update: '',
   };
 
-  const contentBlock = createContentBlock(response.data);
+  const contentBlock = createContentBlock(reqData.detail, response.data);
   if (!contentBlock) {
     return detailResult;
   }
@@ -230,7 +230,7 @@ export async function parseCatalog(
 ) {
   const response = await axios.get(reqData.catalog);
   let catalogResult: CatalogEntry[] = [];
-  const contentBlock = createContentBlock(response.data);
+  const contentBlock = createContentBlock(reqData.catalog, response.data);
   if (!contentBlock) {
     return catalogResult;
   }
@@ -296,7 +296,7 @@ export async function parseChapter(
     content: '',
   };
 
-  const contentBlock = createContentBlock(response.data);
+  const contentBlock = createContentBlock(reqData.url, response.data);
   if (!contentBlock) {
     return chapterResult;
   }

@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import {query as jpQuery, value as jpValue} from 'jsonpath';
+import {URL} from 'url';
 
 interface ReplaceExp {
   old: string;
@@ -103,11 +104,16 @@ function extractData(
   return tmp;
 }
 
+const $PARAMS = '$params.';
 /**
  * 从 javascript object 中提取出文本
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractJsonData(obj: any, exp: string): string {
+function extractJsonData(
+  reqUrlParams: URLSearchParams | null,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  obj: any,
+  exp: string
+): string {
   if (exp.indexOf('$.') === 0) {
     return jpValue(obj, exp);
   }
@@ -115,7 +121,16 @@ function extractJsonData(obj: any, exp: string): string {
   exp.match(/\$\{\S+?\}/g)?.forEach(function (tmpl) {
     if (!toMap[tmpl]) {
       const tmplName = tmpl.slice(2, -1);
-      toMap[tmpl] = jpValue(obj, tmplName);
+      if (tmplName.indexOf($PARAMS) === 0) {
+        if (reqUrlParams) {
+          const v = reqUrlParams.get(tmplName.slice($PARAMS.length));
+          if (v) {
+            toMap[tmpl] = v;
+          }
+        }
+      } else {
+        toMap[tmpl] = jpValue(obj, tmplName);
+      }
     }
   });
   for (const key in toMap) {
@@ -154,20 +169,22 @@ class ContentBlockHtml implements ContentBlock {
 }
 
 class ContentBlockJson implements ContentBlock {
+  reqUrlParams: URLSearchParams | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   blockData: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(data: any) {
+  constructor(reqUrlParams: URLSearchParams | null, data: any) {
+    this.reqUrlParams = reqUrlParams;
     this.blockData = data;
   }
 
   query(exp: string): ContentBlock[] {
     const elements = jpQuery(this.blockData, exp);
-    return elements.map(el => new ContentBlockJson(el));
+    return elements.map(el => new ContentBlockJson(this.reqUrlParams, el));
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   value(exp: string, type: string) {
-    return extractJsonData(this.blockData, exp);
+    return extractJsonData(this.reqUrlParams, this.blockData, exp);
   }
   text() {
     return this.value('$', '');
@@ -175,14 +192,19 @@ class ContentBlockJson implements ContentBlock {
 }
 
 export default function createContentBlock(
+  reqUrl: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   responseData: any
 ): ContentBlock | null {
   if (typeof responseData === 'string') {
     const $ = cheerio.load(responseData);
-    const $html = $('html');
-    return new ContentBlockHtml($, $html);
+    return new ContentBlockHtml($, $.root());
   } else {
-    return new ContentBlockJson(responseData);
+    let reqUrlParams: URLSearchParams | null = null;
+    if (reqUrl.length > 0) {
+      const reqURL = new URL(reqUrl);
+      reqUrlParams = reqURL.searchParams;
+    }
+    return new ContentBlockJson(reqUrlParams, responseData);
   }
 }
