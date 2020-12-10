@@ -1,5 +1,4 @@
 import axios from 'axios';
-import {URL} from 'url';
 import {BookSource} from './BookSourceMgr';
 import createContentBlock, {ContentBlock} from './ContentBlock';
 
@@ -47,7 +46,7 @@ export async function parseSearch(
 
   const searchResult: ResDataSearch = [];
 
-  const contentBlock = createContentBlock('', response.data);
+  const contentBlock = createContentBlock(searchUrlStr, response.data);
   if (!contentBlock) {
     return searchResult;
   }
@@ -69,14 +68,10 @@ export async function parseSearch(
         entry.cover = attrCover;
       }
     }
-    let attrDetail = iterator.value(bookSource.search.detail, 'href');
+    const attrDetail = iterator.value(bookSource.search.detail, 'href');
     if (attrDetail.length === 0) {
       continue;
     } else {
-      if (attrDetail.indexOf('/') === 0) {
-        const searchURL = new URL(searchUrlStr);
-        attrDetail = searchURL.origin + attrDetail;
-      }
       entry.detail = attrDetail;
     }
     searchResult.push(entry);
@@ -102,7 +97,6 @@ export async function parseDetail(
   reqData: ReqDataDetail
 ) {
   const response = await axios.get(reqData.detail);
-  const detailURL = new URL(reqData.detail);
 
   const detailResult = {
     author: '',
@@ -160,9 +154,6 @@ export async function parseDetail(
       bookSource.detail.catalog,
       'href'
     );
-    if (detailResult.catalog.indexOf('/') === 0) {
-      detailResult.catalog = detailURL.origin + detailResult.catalog;
-    }
   } else {
     detailResult.catalog = reqData.detail;
   }
@@ -207,18 +198,14 @@ function clearRepeatlyCatalogEntry(catalog: CatalogEntry[]): CatalogEntry[] {
 function fillCatalogResult(
   bookSource: BookSource,
   catalogResult: CatalogEntry[],
-  contentBlock: ContentBlock,
-  catalogURLOrigin: string
+  contentBlock: ContentBlock
 ) {
   const entry = {name: '', url: '', useLevel: false};
   entry.name = contentBlock.value(bookSource.catalog.name, 'text');
-  let attrSrc = contentBlock.value(bookSource.catalog.chapter, 'href');
+  const attrSrc = contentBlock.value(bookSource.catalog.chapter, 'href');
   if (attrSrc.length === 0) {
     return;
   } else {
-    if (attrSrc.indexOf('/') === 0) {
-      attrSrc = catalogURLOrigin + attrSrc;
-    }
     entry.url = attrSrc;
   }
   catalogResult.push(entry);
@@ -234,19 +221,13 @@ export async function parseCatalog(
   if (!contentBlock) {
     return catalogResult;
   }
-  const catalogURL = new URL(reqData.catalog);
   for (const iterator of contentBlock.query(bookSource.catalog.list)) {
     if (bookSource.catalog.booklet) {
       for (const iterator2 of iterator.query(bookSource.catalog.booklet.list)) {
-        fillCatalogResult(
-          bookSource,
-          catalogResult,
-          iterator2,
-          catalogURL.origin
-        );
+        fillCatalogResult(bookSource, catalogResult, iterator2);
       }
     } else {
-      fillCatalogResult(bookSource, catalogResult, iterator, catalogURL.origin);
+      fillCatalogResult(bookSource, catalogResult, iterator);
     }
   }
   catalogResult = clearRepeatlyCatalogEntry(catalogResult);

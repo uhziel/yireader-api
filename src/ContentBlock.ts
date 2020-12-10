@@ -67,7 +67,7 @@ function select(
  * 从 dom 中提取出文本
  */
 function extractData(
-  $parent: cheerio.Cheerio | cheerio.Root,
+  $parent: cheerio.Cheerio,
   exp: string,
   type: string
 ): string {
@@ -109,7 +109,7 @@ const $PARAMS = '$params.';
  * 从 javascript object 中提取出文本
  */
 function extractJsonData(
-  reqUrlParams: URLSearchParams | null,
+  reqUrl: URL | null,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   obj: any,
   exp: string
@@ -122,8 +122,8 @@ function extractJsonData(
     if (!toMap[tmpl]) {
       const tmplName = tmpl.slice(2, -1);
       if (tmplName.indexOf($PARAMS) === 0) {
-        if (reqUrlParams) {
-          const v = reqUrlParams.get(tmplName.slice($PARAMS.length));
+        if (reqUrl) {
+          const v = reqUrl.searchParams.get(tmplName.slice($PARAMS.length));
           if (v) {
             toMap[tmpl] = v;
           }
@@ -149,19 +149,32 @@ export interface ContentBlock {
 }
 
 class ContentBlockHtml implements ContentBlock {
+  reqURL: URL | null;
   blockData: cheerio.Cheerio;
   $: cheerio.Root;
-  constructor($: cheerio.Root, data: cheerio.Cheerio) {
+  constructor(reqURL: URL | null, $: cheerio.Root, data: cheerio.Cheerio) {
+    this.reqURL = reqURL;
     this.$ = $;
     this.blockData = data;
   }
 
   query(exp: string): ContentBlock[] {
     const elements = this.blockData.find(exp).toArray();
-    return elements.map(el => new ContentBlockHtml(this.$, this.$(el)));
+    return elements.map(
+      el => new ContentBlockHtml(this.reqURL, this.$, this.$(el))
+    );
   }
   value(exp: string, type: string) {
-    return extractData(this.blockData, exp, type);
+    let v = extractData(this.blockData, exp, type);
+    if (this.reqURL && (type === 'src' || type === 'href')) {
+      if (v.indexOf('/') === 0 || v.indexOf('./') === 0) {
+        const absoluteURL = new URL(v, this.reqURL);
+        absoluteURL.search = '';
+        absoluteURL.hash = '';
+        v = absoluteURL.toString();
+      }
+    }
+    return v;
   }
   text() {
     return this.blockData.text();
@@ -169,22 +182,31 @@ class ContentBlockHtml implements ContentBlock {
 }
 
 class ContentBlockJson implements ContentBlock {
-  reqUrlParams: URLSearchParams | null;
+  reqURL: URL | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   blockData: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(reqUrlParams: URLSearchParams | null, data: any) {
-    this.reqUrlParams = reqUrlParams;
+  constructor(reqURL: URL | null, data: any) {
+    this.reqURL = reqURL;
     this.blockData = data;
   }
 
   query(exp: string): ContentBlock[] {
     const elements = jpQuery(this.blockData, exp);
-    return elements.map(el => new ContentBlockJson(this.reqUrlParams, el));
+    return elements.map(el => new ContentBlockJson(this.reqURL, el));
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   value(exp: string, type: string) {
-    return extractJsonData(this.reqUrlParams, this.blockData, exp);
+    let v = extractJsonData(this.reqURL, this.blockData, exp);
+    if (this.reqURL && (type === 'src' || type === 'href')) {
+      if (v.indexOf('/') === 0 || v.indexOf('./') === 0) {
+        const absoluteURL = new URL(v, this.reqURL);
+        absoluteURL.search = '';
+        absoluteURL.hash = '';
+        v = absoluteURL.toString();
+      }
+    }
+    return v;
   }
   text() {
     return this.value('$', '');
@@ -196,15 +218,14 @@ export default function createContentBlock(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   responseData: any
 ): ContentBlock | null {
+  let reqURL: URL | null = null;
+  if (reqUrl.length > 0) {
+    reqURL = new URL(reqUrl);
+  }
   if (typeof responseData === 'string') {
     const $ = cheerio.load(responseData);
-    return new ContentBlockHtml($, $.root());
+    return new ContentBlockHtml(reqURL, $, $.root());
   } else {
-    let reqUrlParams: URLSearchParams | null = null;
-    if (reqUrl.length > 0) {
-      const reqURL = new URL(reqUrl);
-      reqUrlParams = reqURL.searchParams;
-    }
-    return new ContentBlockJson(reqUrlParams, responseData);
+    return new ContentBlockJson(reqURL, responseData);
   }
 }
