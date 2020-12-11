@@ -52,17 +52,6 @@ function genBsExp(exp: string): BsExp {
   return result;
 }
 
-function select(
-  $parent: cheerio.Cheerio | cheerio.Root,
-  selector: string
-): cheerio.Cheerio {
-  if ('find' in $parent) {
-    return $parent.find(selector);
-  } else {
-    return $parent(selector);
-  }
-}
-
 /**
  * 从 dom 中提取出文本
  */
@@ -74,19 +63,14 @@ function extractData(
   const bsExp = genBsExp(exp);
   let tmp = '';
   if (bsExp.attr) {
-    const res = select($parent, bsExp.selector).attr(bsExp.attr);
+    const res = $parent.find(bsExp.selector).attr(bsExp.attr);
     if (res) {
       tmp = res;
     }
   } else if (type === 'text') {
-    tmp = select($parent, bsExp.selector).text();
-  } else if (type === 'href') {
-    const res = select($parent, bsExp.selector).attr('href');
-    if (res) {
-      tmp = res;
-    }
-  } else if (type === 'src') {
-    const res = select($parent, bsExp.selector).attr('src');
+    tmp = $parent.find(bsExp.selector).text();
+  } else if (type === 'href' || type === 'src') {
+    const res = $parent.find(bsExp.selector).attr(type);
     if (res) {
       tmp = res;
     }
@@ -159,7 +143,16 @@ class ContentBlockHtml implements ContentBlock {
   }
 
   query(exp: string): ContentBlock[] {
-    const elements = this.blockData.find(exp).toArray();
+    const gtMatch = exp.match(/(.*):gt\((\d+)\)\w*$/);
+    let gtValue = -1;
+    if (gtMatch) {
+      exp = gtMatch[1];
+      gtValue = parseInt(gtMatch[2]);
+    }
+    const elements = this.blockData
+      .find(exp)
+      .slice(gtValue + 1)
+      .toArray();
     return elements.map(
       el => new ContentBlockHtml(this.reqURL, this.$, this.$(el))
     );
