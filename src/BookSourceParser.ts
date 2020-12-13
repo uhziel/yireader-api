@@ -1,6 +1,10 @@
-import axios from 'axios';
+import axios, {AxiosRequestConfig} from 'axios';
 import {BookSource} from './BookSourceMgr';
-import createContentBlock, {ContentBlock} from './ContentBlock';
+import createContentBlock, {
+  ContentBlock,
+  genBsExp,
+  HeadersExp,
+} from './ContentBlock';
 
 interface ResDataSearchEntry {
   name: string;
@@ -12,28 +16,50 @@ interface ResDataSearchEntry {
 
 type ResDataSearch = ResDataSearchEntry[];
 
-// @post->... https://chimisgo.gitbook.io/booksource/operator/post
-const operatorPost = '@post->';
-function getSearchUrlStr(url: string): string {
-  const postIndex = url.indexOf(operatorPost);
-  if (postIndex === -1) {
-    return url;
-  } else {
-    return url.slice(0, postIndex);
-  }
+interface BsHttpReq {
+  reqUrl: string;
+  postData: string | null;
+  headers: HeadersExp;
 }
 
-async function makeSearchReq(url: string, searchKey: string) {
-  const postIndex = url.indexOf(operatorPost);
-  if (postIndex === -1) {
-    const searchUrlStr: string = url.replace('${key}', searchKey);
-    return axios.get(encodeURI(searchUrlStr));
+function genBsHttpReq(url: string, searchKey?: string): BsHttpReq {
+  const bsExp = genBsExp(url);
+  const httpReq: BsHttpReq = {reqUrl: '', postData: null, headers: {}};
+
+  if (bsExp.post) {
+    let data: string;
+    if (searchKey) {
+      data = bsExp.post.replace('${key}', searchKey);
+    } else {
+      data = bsExp.post;
+    }
+
+    httpReq.reqUrl = bsExp.selector;
+    httpReq.postData = data;
+    httpReq.headers = bsExp.headers;
   } else {
-    const searchUrlStr = url.slice(0, postIndex);
-    const data = url
-      .slice(postIndex + operatorPost.length)
-      .replace('${key}', searchKey);
-    return axios.post(searchUrlStr, data);
+    if (searchKey) {
+      httpReq.reqUrl = bsExp.selector.replace(
+        '${key}',
+        encodeURIComponent(searchKey)
+      );
+    } else {
+      httpReq.reqUrl = bsExp.selector;
+    }
+    httpReq.headers = bsExp.headers;
+  }
+
+  return httpReq;
+}
+
+async function makeHttpReq(bsHttpReq: BsHttpReq) {
+  const config: AxiosRequestConfig = {};
+  config.headers = bsHttpReq.headers;
+
+  if (bsHttpReq.postData) {
+    return axios.post(bsHttpReq.reqUrl, bsHttpReq.postData, config);
+  } else {
+    return axios.get(bsHttpReq.reqUrl, config);
   }
 }
 
@@ -41,12 +67,12 @@ export async function parseSearch(
   bookSource: BookSource,
   searchKey: string
 ): Promise<ResDataSearch> {
-  const searchUrlStr = getSearchUrlStr(bookSource.search.url);
-  const response = await makeSearchReq(bookSource.search.url, searchKey);
+  const bsHttpReq = genBsHttpReq(bookSource.search.url, searchKey);
+  const response = await makeHttpReq(bsHttpReq);
 
   const searchResult: ResDataSearch = [];
 
-  const contentBlock = createContentBlock(searchUrlStr, response.data);
+  const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
   if (!contentBlock) {
     return searchResult;
   }
@@ -96,7 +122,8 @@ export async function parseDetail(
   bookSource: BookSource,
   reqData: ReqDataDetail
 ) {
-  const response = await axios.get(reqData.detail);
+  const bsHttpReq = genBsHttpReq(reqData.detail);
+  const response = await makeHttpReq(bsHttpReq);
 
   const detailResult = {
     author: '',
@@ -109,7 +136,7 @@ export async function parseDetail(
     update: '',
   };
 
-  const contentBlock = createContentBlock(reqData.detail, response.data);
+  const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
   if (!contentBlock) {
     return detailResult;
   }
@@ -215,9 +242,11 @@ export async function parseCatalog(
   bookSource: BookSource,
   reqData: ReqDataCatalog
 ) {
-  const response = await axios.get(reqData.catalog);
+  const bsHttpReq = genBsHttpReq(reqData.catalog);
+  const response = await makeHttpReq(bsHttpReq);
+
   let catalogResult: CatalogEntry[] = [];
-  const contentBlock = createContentBlock(reqData.catalog, response.data);
+  const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
   if (!contentBlock) {
     return catalogResult;
   }
@@ -271,19 +300,21 @@ export async function parseChapter(
   bookSource: BookSource,
   reqData: ReqDataChapter
 ) {
-  const response = await axios.get(reqData.url);
+  const bsHttpReq = genBsHttpReq(reqData.url);
+  const response = await makeHttpReq(bsHttpReq);
+
   const allP: string[] = [];
   const chapterResult = {
     content: '',
   };
 
-  const contentBlock = createContentBlock(reqData.url, response.data);
-  if (!contentBlock) {
+  if (!bookSource.chapter.content) {
+    chapterResult.content = response.data;
     return chapterResult;
   }
 
-  if (!bookSource.chapter.content) {
-    chapterResult.content = response.data;
+  const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
+  if (!contentBlock) {
     return chapterResult;
   }
 

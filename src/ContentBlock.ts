@@ -7,20 +7,28 @@ interface ReplaceExp {
   new: string;
 }
 
+export interface HeadersExp {
+  [key: string]: string;
+}
+
 interface BsExp {
   selector: string;
   replace: ReplaceExp | null;
   attr: string | null;
   match: string | null;
+  post: string | null;
+  headers: HeadersExp;
 }
 
-function genBsExp(exp: string): BsExp {
+export function genBsExp(exp: string): BsExp {
   const partsExp = exp.split('@');
   const result: BsExp = {
     selector: partsExp[0],
     replace: null,
     attr: null,
     match: null,
+    post: null,
+    headers: {},
   };
   for (let index = 1; index < partsExp.length; index++) {
     const operatorExp = partsExp[index];
@@ -29,7 +37,21 @@ function genBsExp(exp: string): BsExp {
     }
 
     const parts = operatorExp.split('->');
-    if (parts[0] === 'replace') {
+    if (parts[0] === 'post') {
+      // @post->... https://chimisgo.gitbook.io/booksource/operator/post
+      if (parts.length === 2) {
+        result.post = parts[1];
+      }
+    } else if (parts[0] === 'header') {
+      // @header->...:... https://chimisgo.gitbook.io/booksource/operator/header
+      if (parts.length === 2) {
+        const headerStr = parts[1];
+        const headerParts = headerStr.split(':');
+        if (headerParts.length === 2) {
+          result.headers[headerParts[0]] = headerParts[1];
+        }
+      }
+    } else if (parts[0] === 'replace') {
       // @replace->...->... https://chimisgo.gitbook.io/booksource/operator/replace
       if (parts.length === 3) {
         result.replace = {
@@ -49,6 +71,7 @@ function genBsExp(exp: string): BsExp {
       }
     }
   }
+
   return result;
 }
 
@@ -190,7 +213,7 @@ class ContentBlockJson implements ContentBlock {
   }
 
   query(exp: string): ContentBlock[] {
-    const elements = jpQuery(this.blockData, exp);
+    const elements = jpQuery(this.blockData, exp + '[*]');
     return elements.map(el => new ContentBlockJson(this.reqURL, el));
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -198,10 +221,14 @@ class ContentBlockJson implements ContentBlock {
     let v = extractJsonData(this.reqURL, this.blockData, exp);
     if (this.reqURL && (type === 'src' || type === 'href')) {
       if (v.indexOf('/') === 0 || v.indexOf('./') === 0) {
-        const absoluteURL = new URL(v, this.reqURL);
+        const parts = v.split('?');
+        const absoluteURL = new URL(parts[0], this.reqURL);
         absoluteURL.search = '';
         absoluteURL.hash = '';
         v = absoluteURL.toString();
+        if (parts[1]) {
+          v = v + '?' + parts[1];
+        }
       }
     }
     return v;
