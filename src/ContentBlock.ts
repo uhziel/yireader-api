@@ -132,6 +132,10 @@ export interface ContentBlock {
   text(): string;
 }
 
+function makeExpValid(exp: string): string {
+  return exp.replace(/\[\s*([^"' ]+?)\s*=\s*([^"' ]+?)\s*\]/g, "[$1='$2']");
+}
+
 class ContentBlockHtml implements ContentBlock {
   reqURL: URL | null;
   blockData: cheerio.Cheerio;
@@ -158,6 +162,7 @@ class ContentBlockHtml implements ContentBlock {
     );
   }
   value(exp: string, type: string) {
+    exp = makeExpValid(exp);
     let v = extractData(this.blockData, exp, type);
     if (this.reqURL && (type === 'src' || type === 'href')) {
       if (v.indexOf('/') === 0 || v.indexOf('./') === 0) {
