@@ -5,6 +5,15 @@ import createContentBlock, {
   genBsExp,
   HeadersExp,
 } from './ContentBlock';
+import * as iconv from 'iconv-lite';
+import * as urlencode from 'urlencode';
+
+const axiosWithEncoding = axios.create();
+axiosWithEncoding.interceptors.response.use(response => {
+  const charset = response.config.headers['yireader-charset'];
+  response.data = iconv.decode(response.data, charset);
+  return response;
+});
 
 interface ResDataSearchEntry {
   name: string;
@@ -39,10 +48,7 @@ function genBsHttpReq(url: string, searchKey?: string): BsHttpReq {
     httpReq.headers = bsExp.headers;
   } else {
     if (searchKey) {
-      httpReq.reqUrl = bsExp.selector.replace(
-        '${key}',
-        encodeURIComponent(searchKey)
-      );
+      httpReq.reqUrl = bsExp.selector.replace('${key}', searchKey);
     } else {
       httpReq.reqUrl = bsExp.selector;
     }
@@ -52,9 +58,22 @@ function genBsHttpReq(url: string, searchKey?: string): BsHttpReq {
   return httpReq;
 }
 
-async function makeHttpReq(bsHttpReq: BsHttpReq) {
+async function makeHttpReq(bsHttpReq: BsHttpReq, bookSource: BookSource) {
   const config: AxiosRequestConfig = {};
   config.headers = bsHttpReq.headers;
+  if (bookSource.search.charset && bookSource.search.charset !== 'utf8') {
+    config.headers['yireader-charset'] = bookSource.search.charset;
+    config.responseType = 'arraybuffer';
+    if (bsHttpReq.postData) {
+      return axiosWithEncoding.post(
+        bsHttpReq.reqUrl,
+        bsHttpReq.postData,
+        config
+      );
+    } else {
+      return axiosWithEncoding.get(bsHttpReq.reqUrl, config);
+    }
+  }
 
   if (bsHttpReq.postData) {
     return axios.post(bsHttpReq.reqUrl, bsHttpReq.postData, config);
@@ -67,8 +86,11 @@ export async function parseSearch(
   bookSource: BookSource,
   searchKey: string
 ): Promise<ResDataSearch> {
-  const bsHttpReq = genBsHttpReq(bookSource.search.url, searchKey);
-  const response = await makeHttpReq(bsHttpReq);
+  const bsHttpReq = genBsHttpReq(
+    bookSource.search.url,
+    urlencode(searchKey, bookSource.search.charset)
+  );
+  const response = await makeHttpReq(bsHttpReq, bookSource);
 
   const searchResult: ResDataSearch = [];
 
@@ -87,12 +109,7 @@ export async function parseSearch(
       entry.summary = iterator.value(bookSource.search.summary, 'text');
     }
     if (bookSource.search.cover) {
-      const attrCover = iterator.value(bookSource.search.cover, 'src');
-      if (attrCover.length === 0) {
-        continue;
-      } else {
-        entry.cover = attrCover;
-      }
+      entry.cover = iterator.value(bookSource.search.cover, 'src');
     }
     const attrDetail = iterator.value(bookSource.search.detail, 'href');
     if (attrDetail.length === 0) {
@@ -123,7 +140,7 @@ export async function parseDetail(
   reqData: ReqDataDetail
 ) {
   const bsHttpReq = genBsHttpReq(reqData.detail);
-  const response = await makeHttpReq(bsHttpReq);
+  const response = await makeHttpReq(bsHttpReq, bookSource);
 
   const detailResult = {
     author: '',
@@ -243,7 +260,7 @@ export async function parseCatalog(
   reqData: ReqDataCatalog
 ) {
   const bsHttpReq = genBsHttpReq(reqData.catalog);
-  const response = await makeHttpReq(bsHttpReq);
+  const response = await makeHttpReq(bsHttpReq, bookSource);
 
   let catalogResult: CatalogEntry[] = [];
   const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
@@ -301,7 +318,7 @@ export async function parseChapter(
   reqData: ReqDataChapter
 ) {
   const bsHttpReq = genBsHttpReq(reqData.url);
-  const response = await makeHttpReq(bsHttpReq);
+  const response = await makeHttpReq(bsHttpReq, bookSource);
 
   const allP: string[] = [];
   const chapterResult = {

@@ -4,12 +4,13 @@ const bookSourceFiles = [
   'jueshitangmen.info.json',
   'www.9txs.com.json',
   'dlib.wxlib.cn.json',
+  'www.zhaishuyuan.com.json',
 ];
 
 // 搜索
 interface BookSourceSearch {
   url: string; // 地址 ${key}代表搜索关键词，搜索时自动替换为用户输入的词
-  charset?: string; // TODO 关键词编码 比如 utf-8
+  charset?: string; //关键词编码 比如 utf-8
   list: string; // 列表 提取结果元素的相同特征
   name: string; // 书名
   author?: string; // 作者
@@ -86,6 +87,20 @@ class BookSourceMgr {
   getBookSource(hostname: string): BookSource | null {
     for (const bookSource of this.bookSources) {
       if (hostname.indexOf(bookSource.url) !== -1) {
+        return bookSource;
+      }
+      if (bookSource.search.url.indexOf(hostname) !== -1) {
+        return bookSource;
+      }
+      if (bookSource.search.detail.indexOf(hostname) !== -1) {
+        return bookSource;
+      }
+      if (bookSource.detail.catalog) {
+        if (bookSource.detail.catalog.indexOf(hostname) !== -1) {
+          return bookSource;
+        }
+      }
+      if (bookSource.catalog.chapter.indexOf(hostname) !== -1) {
         return bookSource;
       }
     }
