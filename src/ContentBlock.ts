@@ -213,7 +213,7 @@ class ContentBlockJson implements ContentBlock {
   }
 
   query(exp: string): ContentBlock[] {
-    const elements = jpQuery(this.blockData, exp + '[*]');
+    const elements = jpQuery(this.blockData, exp);
     return elements.map(el => new ContentBlockJson(this.reqURL, el));
   }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -8,10 +8,72 @@ import createContentBlock, {
 import * as iconv from 'iconv-lite';
 import * as urlencode from 'urlencode';
 
+interface ContentType {
+  type: string;
+  charset: string;
+}
+
+function parseContentType(text: string): ContentType {
+  const contentType: ContentType = {
+    type: 'text/html',
+    charset: 'unknown',
+  };
+
+  if (!text) {
+    return contentType;
+  }
+
+  const contentParts = text.split(';');
+  if (contentParts.length <= 0) {
+    return contentType;
+  }
+  contentType.type = contentParts[0].trim().toLowerCase();
+  if (contentType.type === 'application/json') {
+    contentType.charset = 'utf8';
+  }
+
+  if (!contentParts[1]) {
+    return contentType;
+  }
+
+  const paramParts = contentParts[1].split('=');
+  if (paramParts.length !== 2) {
+    return contentType;
+  }
+
+  if (paramParts[0].trim().toLowerCase() !== 'charset') {
+    return contentType;
+  }
+
+  contentType.charset = paramParts[1].trim().toLowerCase();
+  return contentType;
+}
+
 const axiosWithEncoding = axios.create();
 axiosWithEncoding.interceptors.response.use(response => {
-  const charset = response.config.headers['yireader-charset'];
-  response.data = iconv.decode(response.data, charset);
+  const contentType = parseContentType(response.headers['content-type']);
+  if (contentType.charset !== 'unknown') {
+    response.data = iconv.decode(response.data, contentType.charset);
+  } else {
+    // 1024 via https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#Attributes
+    const headerText = iconv.decode(response.data.slice(0, 1024), 'latin1');
+    let charset = 'utf8';
+    const result = headerText.match(
+      /<meta.*?charset="?([-A-Za-z0-9_]+)"?.*?>/i
+    );
+    if (result !== null && result.length === 2) {
+      charset = result[1];
+    }
+    response.data = iconv.decode(response.data, charset);
+  }
+
+  if (contentType.type === 'application/json') {
+    try {
+      response.data = JSON.parse(response.data);
+    } catch (e) {
+      console.error(e);
+    }
+  }
   return response;
 });
 
@@ -58,27 +120,14 @@ function genBsHttpReq(url: string, searchKey?: string): BsHttpReq {
   return httpReq;
 }
 
-async function makeHttpReq(bsHttpReq: BsHttpReq, bookSource: BookSource) {
+async function makeHttpReq(bsHttpReq: BsHttpReq) {
   const config: AxiosRequestConfig = {};
   config.headers = bsHttpReq.headers;
-  if (bookSource.search.charset && bookSource.search.charset !== 'utf8') {
-    config.headers['yireader-charset'] = bookSource.search.charset;
-    config.responseType = 'arraybuffer';
-    if (bsHttpReq.postData) {
-      return axiosWithEncoding.post(
-        bsHttpReq.reqUrl,
-        bsHttpReq.postData,
-        config
-      );
-    } else {
-      return axiosWithEncoding.get(bsHttpReq.reqUrl, config);
-    }
-  }
-
+  config.responseType = 'arraybuffer';
   if (bsHttpReq.postData) {
-    return axios.post(bsHttpReq.reqUrl, bsHttpReq.postData, config);
+    return axiosWithEncoding.post(bsHttpReq.reqUrl, bsHttpReq.postData, config);
   } else {
-    return axios.get(bsHttpReq.reqUrl, config);
+    return axiosWithEncoding.get(bsHttpReq.reqUrl, config);
   }
 }
 
@@ -90,7 +139,7 @@ export async function parseSearch(
     bookSource.search.url,
     urlencode(searchKey, bookSource.search.charset)
   );
-  const response = await makeHttpReq(bsHttpReq, bookSource);
+  const response = await makeHttpReq(bsHttpReq);
 
   const searchResult: ResDataSearch = [];
 
@@ -140,7 +189,7 @@ export async function parseDetail(
   reqData: ReqDataDetail
 ) {
   const bsHttpReq = genBsHttpReq(reqData.detail);
-  const response = await makeHttpReq(bsHttpReq, bookSource);
+  const response = await makeHttpReq(bsHttpReq);
 
   const detailResult = {
     author: '',
@@ -260,7 +309,7 @@ export async function parseCatalog(
   reqData: ReqDataCatalog
 ) {
   const bsHttpReq = genBsHttpReq(reqData.catalog);
-  const response = await makeHttpReq(bsHttpReq, bookSource);
+  const response = await makeHttpReq(bsHttpReq);
 
   let catalogResult: CatalogEntry[] = [];
   const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
@@ -318,7 +367,7 @@ export async function parseChapter(
   reqData: ReqDataChapter
 ) {
   const bsHttpReq = genBsHttpReq(reqData.url);
-  const response = await makeHttpReq(bsHttpReq, bookSource);
+  const response = await makeHttpReq(bsHttpReq);
 
   const allP: string[] = [];
   const chapterResult = {
@@ -336,13 +385,14 @@ export async function parseChapter(
   }
 
   for (const iterator of contentBlock.query(bookSource.chapter.content)) {
-    const text = iterator.text();
-    if (text.indexOf('    ') !== -1) {
-      for (const subText of text.split('    ')) {
-        if (subText.length === 0) {
+    const text = iterator.text(); //TODO www.wanbentxt.com.json chapter 转换换行需进一步优化
+    if (text.indexOf('abcdefg') !== -1) {
+      for (const subText of text.split('\n')) {
+        const subTextAfterTrim = subText.trim();
+        if (subTextAfterTrim.length === 0) {
           continue;
         }
-        fillAllP(bookSource, allP, subText);
+        fillAllP(bookSource, allP, subTextAfterTrim);
       }
     } else {
       fillAllP(bookSource, allP, text);

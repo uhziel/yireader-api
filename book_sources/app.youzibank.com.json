@@ -20,7 +20,7 @@
         "catalog": "/book/chapter/listAll?bookId=${$.data[0].id}"
     },
     "catalog": {
-        "list": "$.data",
+        "list": "$.data[*]",
         "name": "$.name",
         "chapter": "http://book.chengxinqinye.com/book${$.filePath}"
     },
