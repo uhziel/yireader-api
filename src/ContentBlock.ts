@@ -198,7 +198,31 @@ class ContentBlockHtml implements ContentBlock {
     return v;
   }
   text() {
-    return this.blockData.text();
+    // 没法直接使用 this.blocakData.text()，因为它不能很好处理 <br>
+    // 看了 cheerio text() 的实现，重新实现下让其支持 <br>
+    // https://sourcegraph.com/github.com/cheeriojs/cheerio@main/-/blob/lib/static.js#L159:9
+    return this.renderText(this.blockData.toArray());
+  }
+
+  private renderText(elems: cheerio.Element[]) {
+    let ret = '';
+    const len = elems.length;
+
+    for (let i = 0; i < len; i++) {
+      const elem = elems[i];
+      if (elem.type === 'text') ret += elem.data;
+      else if (elem.type === 'tag' && elem.tagName === 'br') ret += '\n';
+      else if (
+        elem.children &&
+        elem.type !== 'comment' &&
+        elem.tagName !== 'script' &&
+        elem.tagName !== 'style'
+      ) {
+        ret += this.renderText(elem.children);
+      }
+    }
+
+    return ret;
   }
 }
 

@@ -385,8 +385,8 @@ export async function parseChapter(
   }
 
   for (const iterator of contentBlock.query(bookSource.chapter.content)) {
-    const text = iterator.text(); //TODO www.wanbentxt.com.json chapter 转换换行需进一步优化
-    if (text.indexOf('abcdefg') !== -1) {
+    const text = iterator.text();
+    if (text.indexOf('\n') !== -1) {
       for (const subText of text.split('\n')) {
         const subTextAfterTrim = subText.trim();
         if (subTextAfterTrim.length === 0) {
