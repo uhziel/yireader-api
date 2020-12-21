@@ -362,6 +362,44 @@ function fillAllP(bookSource: BookSource, allP: string[], text: string) {
   allP.push(text);
 }
 
+async function parseChapterOnePage(bookSource: BookSource, url: string) {
+  const bsHttpReq = genBsHttpReq(url);
+  const response = await makeHttpReq(bsHttpReq);
+
+  let allP: string[] = [];
+
+  if (!bookSource.chapter.content) {
+    return allP;
+  }
+
+  const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
+  if (!contentBlock) {
+    return allP;
+  }
+
+  for (const iterator of contentBlock.query(bookSource.chapter.content)) {
+    const text = iterator.text();
+    if (text.indexOf('\n') !== -1) {
+      for (const subText of text.split('\n')) {
+        const subTextAfterTrim = subText.trim();
+        if (subTextAfterTrim.length === 0) {
+          continue;
+        }
+        fillAllP(bookSource, allP, subTextAfterTrim);
+      }
+    } else {
+      fillAllP(bookSource, allP, text);
+    }
+  }
+  if (bookSource.chapter.page) {
+    const attrHref = contentBlock.value(bookSource.chapter.page, 'href');
+    if (attrHref.length > 0) {
+      allP = allP.concat(await parseChapterOnePage(bookSource, attrHref));
+    }
+  }
+  return allP;
+}
+
 export async function parseChapter(
   bookSource: BookSource,
   reqData: ReqDataChapter
@@ -369,7 +407,7 @@ export async function parseChapter(
   const bsHttpReq = genBsHttpReq(reqData.url);
   const response = await makeHttpReq(bsHttpReq);
 
-  const allP: string[] = [];
+  let allP: string[] = [];
   const chapterResult = {
     content: '',
   };
@@ -396,6 +434,12 @@ export async function parseChapter(
       }
     } else {
       fillAllP(bookSource, allP, text);
+    }
+  }
+  if (bookSource.chapter.page) {
+    const attrHref = contentBlock.value(bookSource.chapter.page, 'href');
+    if (attrHref.length > 0) {
+      allP = allP.concat(await parseChapterOnePage(bookSource, attrHref));
     }
   }
   chapterResult.content = allP.join('\n');

@@ -52,7 +52,7 @@ interface BookSourceChapter {
   content?: string; // 正文 当返回txt文本时不需填写该字段
   filter?: string; // TODO 过滤标签 支持CSSQuery和 标签（例如：@div） 不清楚其作用
   purify?: string[]; // 屏蔽规则 这里实际是个屏蔽用的正则表达式
-  page?: string; // TODO 分页 下一页链接元素
+  page?: string; // 分页 下一页链接元素
 }
 
 // 书源
