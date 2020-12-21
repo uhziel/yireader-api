@@ -203,12 +203,10 @@ class ContentBlockHtml implements ContentBlock {
     exp = makeExpValid(exp);
     let v = extractData(this.blockData, exp, type);
     if (this.reqURL && (type === 'src' || type === 'href')) {
-      if (v.indexOf('/') === 0 || v.indexOf('./') === 0) {
-        const absoluteURL = new URL(v, this.reqURL);
-        absoluteURL.search = '';
-        absoluteURL.hash = '';
-        v = absoluteURL.toString();
-      }
+      const absoluteURL = new URL(v, this.reqURL);
+      absoluteURL.search = '';
+      absoluteURL.hash = '';
+      v = absoluteURL.toString();
     }
     return v;
   }

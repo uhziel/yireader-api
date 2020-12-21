@@ -67,7 +67,7 @@ axiosWithEncoding.interceptors.response.use(response => {
     response.data = iconv.decode(response.data, charset);
   }
 
-  if (contentType.type === 'application/json') {
+  if (contentType.type === 'application/json' || response.data[0] === '{') {
     try {
       response.data = JSON.parse(response.data);
     } catch (e) {
@@ -356,6 +356,9 @@ function needPurify(bookSource: BookSource, text: string): boolean {
 }
 
 function fillAllP(bookSource: BookSource, allP: string[], text: string) {
+  if (text.length === 0) {
+    return;
+  }
   if (needPurify(bookSource, text)) {
     return;
   }
@@ -427,9 +430,6 @@ export async function parseChapter(
     if (text.indexOf('\n') !== -1) {
       for (const subText of text.split('\n')) {
         const subTextAfterTrim = subText.trim();
-        if (subTextAfterTrim.length === 0) {
-          continue;
-        }
         fillAllP(bookSource, allP, subTextAfterTrim);
       }
     } else {
