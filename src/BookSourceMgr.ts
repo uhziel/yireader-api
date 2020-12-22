@@ -41,7 +41,7 @@ interface BookSourceBooklet {
 interface BookSourceCatalog {
   list: string; // 目录 章节或分卷列表
   orderBy?: 0 | 1 | 2 | 3; // TODO 排序方式 0（分卷正序章节正序）1（分卷倒序章节倒序）2（分卷正序章节倒序）3（分卷倒序章节正序）
-  booklet?: BookSourceBooklet; // TODO 分卷
+  booklet?: BookSourceBooklet; // 分卷
   name: string; // 章节标题
   chapter: string; // 章节地址
   page?: string; // TODO 分页 下一页链接元素
@@ -85,6 +85,10 @@ class BookSourceMgr {
   }
 
   getBookSource(hostname: string): BookSource | null {
+    const hostnameParts = hostname.split('.');
+    if (hostnameParts.length > 2) {
+      hostname = hostnameParts.slice(-2).join('.');
+    }
     for (const bookSource of this.bookSources) {
       if (hostname.indexOf(bookSource.url) !== -1) {
         return bookSource;

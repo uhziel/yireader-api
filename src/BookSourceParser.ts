@@ -50,6 +50,8 @@ function parseContentType(text: string): ContentType {
 }
 
 const axiosWithEncoding = axios.create();
+axiosWithEncoding.defaults.headers.common['User-Agent'] =
+  'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36';
 axiosWithEncoding.interceptors.response.use(response => {
   const contentType = parseContentType(response.headers['content-type']);
   if (contentType.charset !== 'unknown') {
@@ -277,7 +279,7 @@ interface CatalogEntry {
 }
 
 function clearRepeatlyCatalogEntry(catalog: CatalogEntry[]): CatalogEntry[] {
-  let repeatlyIndex = 0;
+  let repeatlyIndex = -1;
   for (let index = 0; index < catalog.length; index++) {
     if (catalog[index].name === catalog[catalog.length - 1 - index].name) {
       repeatlyIndex = index;
@@ -285,15 +287,19 @@ function clearRepeatlyCatalogEntry(catalog: CatalogEntry[]): CatalogEntry[] {
       break;
     }
   }
+  if (repeatlyIndex === -1) {
+    return catalog;
+  }
   return catalog.slice(repeatlyIndex + 1);
 }
 
 function fillCatalogResult(
   bookSource: BookSource,
   catalogResult: CatalogEntry[],
-  contentBlock: ContentBlock
+  contentBlock: ContentBlock,
+  useLevel: boolean
 ) {
-  const entry = {name: '', url: '', useLevel: false};
+  const entry = {name: '', url: '', useLevel: useLevel};
   entry.name = contentBlock.value(bookSource.catalog.name, 'text');
   const attrSrc = contentBlock.value(bookSource.catalog.chapter, 'href');
   if (attrSrc.length === 0) {
@@ -318,11 +324,19 @@ export async function parseCatalog(
   }
   for (const iterator of contentBlock.query(bookSource.catalog.list)) {
     if (bookSource.catalog.booklet) {
+      const bookletName = iterator.value(
+        bookSource.catalog.booklet.name,
+        'text'
+      );
+      if (bookletName) {
+        const entry = {name: bookletName, url: '', useLevel: false};
+        catalogResult.push(entry);
+      }
       for (const iterator2 of iterator.query(bookSource.catalog.booklet.list)) {
-        fillCatalogResult(bookSource, catalogResult, iterator2);
+        fillCatalogResult(bookSource, catalogResult, iterator2, true);
       }
     } else {
-      fillCatalogResult(bookSource, catalogResult, iterator);
+      fillCatalogResult(bookSource, catalogResult, iterator, false);
     }
   }
   catalogResult = clearRepeatlyCatalogEntry(catalogResult);

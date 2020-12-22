@@ -115,7 +115,7 @@ function extractData(
   if (bsExp.replace) {
     tmp = tmp.replace(bsExp.replace.old, bsExp.replace.new);
   } else if (bsExp.match) {
-    const matchRes = tmp.match(bsExp.match);
+    const matchRes = tmp.match(new RegExp(bsExp.match, 's'));
     if (matchRes) {
       tmp = matchRes[0];
     }

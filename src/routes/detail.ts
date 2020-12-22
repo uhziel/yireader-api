@@ -14,7 +14,9 @@ async function handleDetail(req: express.Request, res: express.Response) {
   const detailURL = new URL(reqData.detail);
   const bookSource = bookSourceMgr.getBookSource(detailURL.hostname);
   if (!bookSource) {
-    res.status(400).send('Bad Request');
+    res
+      .status(400)
+      .send(`Cannot find booksource through url: ${reqData.detail}`);
     return;
   }
   const result = await parseDetail(bookSource, reqData);
