@@ -16,7 +16,7 @@ interface BsExp {
   replace: ReplaceExp | null;
   attr: string | null;
   match: string | null;
-  textMatch: string | null;
+  textSelector: string | null;
   post: string | null;
   headers: HeadersExp;
 }
@@ -28,7 +28,7 @@ export function genBsExp(exp: string): BsExp {
     replace: null,
     attr: null,
     match: null,
-    textMatch: null,
+    textSelector: null,
     post: null,
     headers: {},
   };
@@ -71,10 +71,10 @@ export function genBsExp(exp: string): BsExp {
       if (parts.length === 2) {
         result.match = parts[1];
       }
-    } else if (parts[0] === 'textMatch') {
-      // @textMatch->... 我自定义的，因为 css selectors 不能筛选内容，这里筛选下最终内容
+    } else if (parts[0] === 'textSelector') {
+      // @textSelector->... 我自定义的，因为 css selectors 不能筛选内容，这里筛选下最终内容
       if (parts.length === 2) {
-        result.textMatch = parts[1];
+        result.textSelector = parts[1];
       }
     }
   }
@@ -92,9 +92,9 @@ function extractData(
 ): string {
   const bsExp = genBsExp(exp);
   let tmp = '';
-  if (bsExp.textMatch) {
+  if (bsExp.textSelector) {
     const selectorText = $parent.find(bsExp.selector).text();
-    if (!selectorText.match(bsExp.textMatch)) {
+    if (!selectorText.match(bsExp.textSelector)) {
       return tmp;
     }
   }
@@ -170,7 +170,7 @@ export interface ContentBlock {
 
 function makeExpValid(exp: string): string {
   let tmp = exp.replace(/\[\s*([^"' ]+?)\s*=\s*([^"' ]+?)\s*\]/g, "[$1='$2']");
-  tmp = tmp.replace(/:matches\((.+)\)$/, '@textMatch->$1');
+  tmp = tmp.replace(/:matches\((.+)\)$/, '@textSelector->$1');
   return tmp;
 }
 
