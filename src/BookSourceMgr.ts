@@ -1,10 +1,15 @@
 import {readFileSync} from 'fs';
 
 const bookSourceFiles = [
+  'app.youzibank.com.json',
+  'dlib.wxlib.cn.json',
   'jueshitangmen.info.json',
   'www.9txs.com.json',
-  'dlib.wxlib.cn.json',
+  'www.ahlib.com',
+  'www.wanbentxt.com.json',
   'www.zhaishuyuan.com.json',
+  'www.zongheng.com.json',
+  'zuopinj.com.json',
 ];
 
 // 搜索
@@ -51,7 +56,7 @@ interface BookSourceCatalog {
 interface BookSourceChapter {
   content?: string; // 正文 当返回txt文本时不需填写该字段
   filter?: string; // TODO 过滤标签 支持CSSQuery和 标签（例如：@div） 不清楚其作用
-  purify?: string[]; // 屏蔽规则 这里实际是个屏蔽用的正则表达式
+  purify?: string[]; // 屏蔽规则 这里实际是个屏蔽用的正则表达式。只有正则表达式匹配整个段落，才会净化掉它。
   page?: string; // 分页 下一页链接元素
 }
 
@@ -113,6 +118,19 @@ class BookSourceMgr {
 
   getAllBookSources(): BookSource[] {
     return this.bookSources;
+  }
+
+  getEnabledBookSources(enabledUrls: string[] | null): BookSource[] {
+    if (!enabledUrls) {
+      return this.bookSources;
+    }
+    const result = [];
+    for (const iterator of this.bookSources) {
+      if (enabledUrls.indexOf(iterator.url) !== -1) {
+        result.push(iterator);
+      }
+    }
+    return result;
   }
 }
 
