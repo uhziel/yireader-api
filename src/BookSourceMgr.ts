@@ -1,10 +1,10 @@
 import {readFileSync} from 'fs';
 
 const bookSourceFiles = [
+  'www.9txs.com.json',
   'app.youzibank.com.json',
   'dlib.wxlib.cn.json',
   'jueshitangmen.info.json',
-  'www.9txs.com.json',
   'www.ahlib.com',
   'www.wanbentxt.com.json',
   'www.zhaishuyuan.com.json',
@@ -122,7 +122,7 @@ class BookSourceMgr {
 
   getEnabledBookSources(enabledUrls: string[] | null): BookSource[] {
     if (!enabledUrls) {
-      return this.bookSources;
+      return this.bookSources.slice(0, 1);
     }
     const result = [];
     for (const iterator of this.bookSources) {
