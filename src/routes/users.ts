@@ -1,6 +1,9 @@
 import * as express from 'express';
 import User from '../models/user';
 import {sign as signJWT} from 'jsonwebtoken';
+import {hashSync, compareSync} from 'bcrypt';
+
+const SALT_ROUNDS = 8;
 
 const router = express.Router();
 
@@ -43,6 +46,8 @@ router.post('/register', (req, res) => {
     return;
   }
 
+  const passwordAfterHash = hashSync(password, SALT_ROUNDS);
+
   User.findOne({username: username}).exec((err, user) => {
     if (user) {
       registerRes.errors.push('username already registered');
@@ -52,7 +57,7 @@ router.post('/register', (req, res) => {
 
     const newUser = new User({
       username: username,
-      password: password,
+      password: passwordAfterHash,
     });
 
     newUser
@@ -93,7 +98,8 @@ router.post('/login', (req, res) => {
       res.send(loginRes);
       return;
     }
-    if (user.password !== password) {
+
+    if (!compareSync(password, user.password)) {
       loginRes.error = 'password error.';
       res.send(loginRes);
       return;
