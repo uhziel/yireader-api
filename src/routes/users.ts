@@ -30,15 +30,15 @@ router.post('/register', (req, res) => {
     username: '',
   };
   if (!username || !password || !password_confirmation) {
-    registerRes.errors.push('Please fill in all fields');
+    registerRes.errors.push('请填充所有选项。');
   }
 
   if (password !== password_confirmation) {
-    registerRes.errors.push('passwords dont match');
+    registerRes.errors.push('密码不匹配。');
   }
 
   if (password && password.length < 6) {
-    registerRes.errors.push('password at least 6 characters');
+    registerRes.errors.push('密码至少需要6位。');
   }
 
   if (registerRes.errors.length > 0) {
@@ -50,7 +50,7 @@ router.post('/register', (req, res) => {
 
   User.findOne({username: username}).exec((err, user) => {
     if (user) {
-      registerRes.errors.push('username already registered');
+      registerRes.errors.push('该用户名已经被注册。');
       res.send(registerRes);
       return;
     }
@@ -89,18 +89,18 @@ router.post('/login', (req, res) => {
   };
   User.findOne({username: username}).exec((err, user) => {
     if (err) {
-      loginRes.error = 'User findOne error.';
+      loginRes.error = '内部错误。';
       res.send(loginRes);
       return;
     }
     if (!user) {
-      loginRes.error = 'User no found.';
+      loginRes.error = '用户名或密码错误，请重试。';
       res.send(loginRes);
       return;
     }
 
     if (!compareSync(password, user.password)) {
-      loginRes.error = 'password error.';
+      loginRes.error = '用户名或密码错误，请重试。';
       res.send(loginRes);
       return;
     }
