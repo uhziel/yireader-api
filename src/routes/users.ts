@@ -75,7 +75,12 @@ router.post('/register', (req, res) => {
         registerRes.username = username;
         res.send(registerRes);
       })
-      .catch(e => console.error(e));
+      .catch(e => {
+        console.error(e);
+        registerRes.errors.push('内部错误。');
+        res.send(registerRes);
+        return;
+      });
   });
 });
 
@@ -111,6 +116,67 @@ router.post('/login', (req, res) => {
     });
     loginRes.username = username;
     res.send(loginRes);
+  });
+});
+
+interface ChangePasswordRes {
+  ret: number;
+  error: string;
+  success: string;
+}
+
+router.post('/changepassword', (req, res) => {
+  const {username, password, newPassword, newPasswordConfirmation} = req.body;
+  const result: ChangePasswordRes = {
+    ret: 1,
+    error: '',
+    success: '',
+  };
+  User.findOne({username: username}).exec((err, user) => {
+    if (err) {
+      result.error = '内部错误。';
+      res.send(result);
+      return;
+    }
+    if (!user) {
+      result.error = '内部错误。';
+      res.send(result);
+      return;
+    }
+
+    if (newPassword && newPassword.length < 6) {
+      result.error = '新密码至少需要6位。';
+      res.send(result);
+      return;
+    }
+
+    if (newPassword !== newPasswordConfirmation) {
+      result.error = '新密码不匹配。';
+      res.send(result);
+      return;
+    }
+
+    if (!compareSync(password, user.password)) {
+      result.error = '当前密码错误，请重试。';
+      res.send(result);
+      return;
+    }
+
+    const passwordAfterHash = hashSync(newPassword, SALT_ROUNDS);
+    user.password = passwordAfterHash;
+    user
+      .save()
+      .then(user => {
+        console.log(user);
+        result.ret = 0;
+        result.success = '修改密码成功。';
+        res.send(result);
+      })
+      .catch(e => {
+        console.error(e);
+        result.error = '内部错误。';
+        res.send(result);
+      });
   });
 });
 
