@@ -4,6 +4,7 @@ import {sign as signJWT} from 'jsonwebtoken';
 import {hashSync, compareSync} from 'bcrypt';
 
 const SALT_ROUNDS = 8;
+const SECRET_KEY = process.env.SECRET_KEY || 'yireader';
 
 const router = express.Router();
 
@@ -67,7 +68,7 @@ router.post('/register', (req, res) => {
         registerRes.ret = 0;
         registerRes.token = signJWT(
           {id: user.id, username: username},
-          'hhhhh',
+          SECRET_KEY,
           {
             expiresIn: '24h',
           }
@@ -111,7 +112,7 @@ router.post('/login', (req, res) => {
     }
 
     loginRes.ret = 0;
-    loginRes.token = signJWT({id: user.id, username: username}, 'hhhhh', {
+    loginRes.token = signJWT({id: user.id, username: username}, SECRET_KEY, {
       expiresIn: '24h',
     });
     loginRes.username = username;
