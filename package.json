@@ -18,12 +18,14 @@
     "prepare": "npm run compile",
     "pretest": "npm run compile",
     "posttest": "npm run check",
-    "start": "node ."
+    "start": "node --unhandled-rejections=strict ."
   },
   "devDependencies": {
+    "@types/bcrypt": "^3.0.0",
     "@types/cheerio": "^0.22.22",
     "@types/express": "^4.17.8",
     "@types/jsonpath": "^0.2.0",
+    "@types/jsonwebtoken": "^8.5.0",
     "@types/node": "^13.11.1",
     "@types/urlencode": "^1.1.2",
     "gts": "^2.0.2",
@@ -31,10 +33,14 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "bcrypt": "^5.0.0",
     "cheerio": "^1.0.0-rc.3",
+    "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "iconv-lite": "^0.6.2",
     "jsonpath": "^1.0.2",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.11.9",
     "urlencode": "^1.1.0"
   }
 }
