@@ -1,5 +1,5 @@
 import * as express from 'express';
-import User from '../models/user';
+import User from '../models/User';
 import {sign as signJWT} from 'jsonwebtoken';
 import {hashSync, compareSync} from 'bcrypt';
 
