@@ -28,6 +28,7 @@ import detailRouter from './routes/detail';
 import catalogRouter from './routes/catalog';
 import chapterRouter from './routes/chapter';
 import bookSourcesRouter from './routes/bookSources';
+import graphqlRouter from './routes/graphql';
 
 import usersRouter from './routes/users';
 
@@ -44,6 +45,7 @@ app.use('/catalog', catalogRouter);
 app.use('/chapter', chapterRouter);
 app.use('/booksources', bookSourcesRouter);
 app.use('/users', usersRouter);
+app.use('/graphql', graphqlRouter);
 
 app.listen(3001, () => {
   console.log('Listen on port 3001!');

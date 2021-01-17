@@ -1,0 +1,8 @@
+type Query {
+  bookSources: [BookSource!]!
+}
+
+type BookSource {
+  name: String!
+  url: String!
+}
