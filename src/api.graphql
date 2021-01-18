@@ -2,7 +2,16 @@ type Query {
   bookSources: [BookSource!]!
 }
 
+type Mutation {
+  createBookSource(downloadUrl: String!): BookSource
+  enableSearchBookSource(_id: ID!, value: Boolean): Boolean
+  deleteBookSource(_id: ID!): Boolean
+}
+
 type BookSource {
+  _id: ID!
   name: String!
   url: String!
+  version: Int!
+  enableSearch: Boolean!
 }

@@ -2,29 +2,55 @@ import * as express from 'express';
 import {graphqlHTTP} from 'express-graphql';
 import {buildSchema} from 'graphql';
 import {readFileSync} from 'fs';
-import bookSourceMgr from '../BookSourceMgr';
+import BookSource from '../models/BookSource';
 
 const router = express.Router();
 
 const scheme = buildSchema(readFileSync('src/api.graphql', 'utf8'));
 
-interface BookSourceSimpleInfo {
-  name: string;
-  url: string;
+interface CreateBookSourceInput {
+  downloadUrl: string;
+}
+
+interface EnableSearchBookSourceInput {
+  _id: string;
+  value: boolean;
+}
+
+interface DeleteBookSourceInput {
+  _id: string;
 }
 
 const root = {
-  bookSources: () => {
-    const bookSources = bookSourceMgr.getAllBookSources();
-    const bookSourceList: BookSourceSimpleInfo[] = [];
-    for (const bookSource of bookSources) {
-      const info: BookSourceSimpleInfo = {
-        name: bookSource.name,
-        url: bookSource.url,
-      };
-      bookSourceList.push(info);
+  bookSources: async () => {
+    const bookSources = await BookSource.find({});
+    return bookSources;
+  },
+  createBookSource: async (args: CreateBookSourceInput) => {
+    const bookSource = new BookSource({
+      downloadUrl: args.downloadUrl,
+      name: '百度',
+      url: 'baidu.com',
+      version: 100,
+      data: 'hello',
+      enableSearch: true,
+    });
+    await bookSource.save();
+
+    return bookSource;
+  },
+  enableSearchBookSource: async (args: EnableSearchBookSourceInput) => {
+    const bookSource = await BookSource.findById(args._id);
+    if (!bookSource) {
+      return false;
     }
-    return bookSourceList;
+    bookSource.enableSearch = args.value;
+    await bookSource.save();
+    return true;
+  },
+  deleteBookSource: async (args: DeleteBookSourceInput) => {
+    await BookSource.deleteOne({_id: args._id});
+    return true;
   },
 };
 
