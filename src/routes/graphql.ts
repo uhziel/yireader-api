@@ -3,6 +3,8 @@ import {graphqlHTTP} from 'express-graphql';
 import {buildSchema} from 'graphql';
 import {readFileSync} from 'fs';
 import BookSource from '../models/BookSource';
+import axios from 'axios';
+import {BookSource as BookSourceContent} from '../BookSourceMgr';
 
 const router = express.Router();
 
@@ -27,17 +29,31 @@ const root = {
     return bookSources;
   },
   createBookSource: async (args: CreateBookSourceInput) => {
-    const bookSource = new BookSource({
+    const bookSourceDoc = await BookSource.findOne({
       downloadUrl: args.downloadUrl,
-      name: '百度',
-      url: 'baidu.com',
-      version: 100,
-      data: 'hello',
+    });
+    if (bookSourceDoc) {
+      return null;
+    }
+
+    const response = await axios.get(args.downloadUrl);
+    const bookSourceContent: BookSourceContent = response.data;
+
+    if (!bookSourceContent) {
+      return null;
+    }
+
+    const newBookSourceDoc = new BookSource({
+      downloadUrl: args.downloadUrl,
+      name: bookSourceContent.name,
+      url: bookSourceContent.url,
+      version: bookSourceContent.version,
+      data: JSON.stringify(response.data),
       enableSearch: true,
     });
-    await bookSource.save();
+    await newBookSourceDoc.save();
 
-    return bookSource;
+    return newBookSourceDoc;
   },
   enableSearchBookSource: async (args: EnableSearchBookSourceInput) => {
     const bookSource = await BookSource.findById(args._id);
