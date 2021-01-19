@@ -1,17 +1,28 @@
 type Query {
+  """查询所有的书源"""
   bookSources: [BookSource!]!
 }
 
+# 尾部不需要使用;
+
 type Mutation {
+  """创建书源"""
   createBookSource(downloadUrl: String!): BookSource
+  """启用书源"""
   enableSearchBookSource(_id: ID!, value: Boolean): Boolean
+  """删除书源"""
   deleteBookSource(_id: ID!): Boolean
 }
 
+"""表示一个书源"""
 type BookSource {
   _id: ID!
+  """书源名"""
   name: String!
+  """书源所在网站"""
   url: String!
+  """版本号"""
   version: Int!
+  """启用搜索"""
   enableSearch: Boolean!
 }
