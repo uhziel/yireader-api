@@ -9,14 +9,14 @@ type Mutation {
   """创建书源"""
   createBookSource(downloadUrl: String!): BookSource
   """启用书源"""
-  enableSearchBookSource(_id: ID!, value: Boolean): Boolean
+  enableSearchBookSource(id: ID!, value: Boolean): Boolean
   """删除书源"""
-  deleteBookSource(_id: ID!): Boolean
+  deleteBookSource(id: ID!): Boolean
 }
 
 """表示一个书源"""
 type BookSource {
-  _id: ID!
+  id: ID!
   """书源名"""
   name: String!
   """书源所在网站"""
