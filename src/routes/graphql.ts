@@ -5,6 +5,7 @@ import {readFileSync} from 'fs';
 import BookSource from '../models/BookSource';
 import axios from 'axios';
 import {BookSource as BookSourceContent} from '../BookSourceMgr';
+import WebResource from '../models/WebResource';
 
 const router = express.Router();
 
@@ -21,6 +22,10 @@ interface EnableSearchBookSourceInput {
 
 interface DeleteBookSourceInput {
   _id: string;
+}
+
+interface WebResourceInput {
+  url: string;
 }
 
 const root = {
@@ -67,6 +72,26 @@ const root = {
   deleteBookSource: async (args: DeleteBookSourceInput) => {
     await BookSource.deleteOne({_id: args._id});
     return true;
+  },
+  webResources: async () => {
+    const webResources = await WebResource.find({});
+    return webResources;
+  },
+  webResource: async (args: WebResourceInput) => {
+    return await WebResource.findOne({url: args.url});
+  },
+  createWebResource: async (args: WebResourceInput) => {
+    const response = await axios.get(args.url, {
+      responseType: 'arraybuffer',
+    });
+
+    const webResource = new WebResource({
+      url: args.url,
+      mediaType: response.headers['content-type'],
+      blob: response.data,
+    });
+    await webResource.save();
+    return webResource;
   },
 };
 

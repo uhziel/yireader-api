@@ -1,9 +1,13 @@
+# 尾部不需要使用;
+# Scalar types 是 Int、Float、String、Boolean、ID，没有 Buffer、Date
+
 type Query {
   """查询所有的书源"""
   bookSources: [BookSource!]!
+  
+  webResources: [WebResource!]!
+  webResource(url: String!): WebResource
 }
-
-# 尾部不需要使用;
 
 type Mutation {
   """创建书源"""
@@ -12,6 +16,8 @@ type Mutation {
   enableSearchBookSource(id: ID!, value: Boolean): Boolean
   """删除书源"""
   deleteBookSource(id: ID!): Boolean
+
+  createWebResource(url: String!): WebResource
 }
 
 """表示一个书源"""
@@ -25,4 +31,11 @@ type BookSource {
   version: Int!
   """启用搜索"""
   enableSearch: Boolean!
+}
+
+"""网络资源"""
+type WebResource {
+  id: ID!
+  mediaType: String!
+  url: String!
 }
