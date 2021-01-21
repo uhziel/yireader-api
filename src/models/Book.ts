@@ -31,7 +31,7 @@ interface BookInterface extends Document {
   bookFile: BookFileInterface;
 }
 
-const BookSchema = new Schema({
+const bookSchema = new Schema({
   user: {
     type: Schema.Types.ObjectId,
     required: true,
@@ -85,4 +85,4 @@ const BookSchema = new Schema({
   },
 });
 
-export default model<BookInterface>('Book', BookSchema);
+export default model<BookInterface>('Book', bookSchema);

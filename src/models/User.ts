@@ -5,7 +5,7 @@ export interface UserInterface extends Document {
   password: string;
 }
 
-const UserSchema = new Schema({
+const userSchema = new Schema({
   username: {
     type: String,
     required: true,
@@ -20,4 +20,4 @@ const UserSchema = new Schema({
   },
 });
 
-export default model<UserInterface>('User', UserSchema);
+export default model<UserInterface>('User', userSchema);

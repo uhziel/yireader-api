@@ -4,11 +4,11 @@ export interface AuthorInterface extends Document {
   name: string;
 }
 
-const AuthorSchema = new Schema({
+const authorSchema = new Schema({
   name: {
     type: String,
     required: true,
   },
 });
 
-export default model<AuthorInterface>('Author', AuthorSchema);
+export default model<AuthorInterface>('Author', authorSchema);

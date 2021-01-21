@@ -10,7 +10,7 @@ export interface BookSourceInterface extends Document {
   enableSearch: boolean;
 }
 
-const BookSourceSchema = new Schema({
+const bookSourceSchema = new Schema({
   downloadUrl: {
     type: String,
     required: true,
@@ -41,4 +41,4 @@ const BookSourceSchema = new Schema({
   },
 });
 
-export default model<BookSourceInterface>('BookSource', BookSourceSchema);
+export default model<BookSourceInterface>('BookSource', bookSourceSchema);

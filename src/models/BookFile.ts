@@ -5,7 +5,7 @@ export interface BookFileInterface extends Document {
   data: Buffer;
 }
 
-const BookFileSchema = new Schema({
+const bookFileSchema = new Schema({
   format: {
     type: String,
     required: true,
@@ -13,4 +13,4 @@ const BookFileSchema = new Schema({
   data: Buffer,
 });
 
-export default model<BookFileInterface>('BookFile', BookFileSchema);
+export default model<BookFileInterface>('BookFile', bookFileSchema);

@@ -8,7 +8,7 @@ export interface BookChapterInterface extends Document {
   data: WebResourceInterface['_id'];
 }
 
-const BookChapterSchema = new Schema({
+const bookChapterSchema = new Schema({
   name: {
     type: String,
     required: true,
@@ -27,4 +27,4 @@ const BookChapterSchema = new Schema({
   },
 });
 
-export default model<BookChapterInterface>('BookChapter', BookChapterSchema);
+export default model<BookChapterInterface>('BookChapter', bookChapterSchema);
