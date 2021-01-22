@@ -6,6 +6,7 @@ import BookSource from '../models/BookSource';
 import axios from 'axios';
 import {BookSource as BookSourceContent} from '../BookSourceMgr';
 import WebResource from '../models/WebResource';
+import Author from '../models/Author';
 
 const router = express.Router();
 
@@ -26,6 +27,10 @@ interface DeleteBookSourceInput {
 
 interface WebResourceInput {
   url: string;
+}
+
+interface CreateAuthorInput {
+  name: string;
 }
 
 const root = {
@@ -92,6 +97,16 @@ const root = {
     });
     await webResource.save();
     return webResource;
+  },
+  authors: async () => {
+    return await Author.find({});
+  },
+  createAuthor: async (args: CreateAuthorInput) => {
+    const author = new Author({
+      name: args.name,
+    });
+    await author.save();
+    return author;
   },
 };
 
