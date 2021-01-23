@@ -9,12 +9,20 @@ interface CreateBookInput {
   url: string;
 }
 
-export const books = async () => {
-  const books = await Book.find({});
+interface UserInfo {
+  id: string;
+  username: string;
+}
+interface Request {
+  user: UserInfo;
+}
+
+export const books = async (_: unknown, req: Request) => {
+  const books = await Book.find({user: req.user.id});
   return await Book.populate(books, 'author');
 };
 
-export const createBook = async (args: CreateBookInput) => {
+export const createBook = async (args: CreateBookInput, req: Request) => {
   args.bookSourceId = '600bd7031e52d1375f545d0b';
   const detailURL = new URL(args.url);
   const bookSource = bookSourceMgr.getBookSource(detailURL.hostname);
@@ -35,7 +43,7 @@ export const createBook = async (args: CreateBookInput) => {
   });
 
   const book = new Book({
-    user: '600bd6eb1e52d1375f545d0a',
+    user: req.user.id,
     name: result.name,
     author: author.id,
     coverUrl: result.cover,
