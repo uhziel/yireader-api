@@ -2,6 +2,7 @@ import Book from '../models/Book';
 import bookSourceMgr from '../BookSourceMgr';
 import {parseBook, ReqDataDetail} from '../BookSourceParser';
 import {createAuthor} from '../resolvers/Author';
+import {createBookChapters} from '../resolvers/BookChapter';
 import {createWebResource} from '../resolvers/WebResource';
 
 interface CreateBookInput {
@@ -57,10 +58,12 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
     toc: [],
     bookSource: args.bookSourceId,
   });
-  for (const chapter of result.chapters) {
+  const bookChapters = await createBookChapters(result.chapters);
+  for (const chapter of bookChapters) {
     book.toc.push({
       name: chapter.name,
       url: chapter.url,
+      chapter: chapter.id,
     });
   }
   await book.save();

@@ -45,8 +45,6 @@ export const createBookChapter = async (args: CreateBookChapterInput) => {
 };
 
 export const createBookChapters = async (args: CreateBookChapterInput[]) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tmpargs: any = args;
-  const chapters = await BookChapter.insertMany(tmpargs);
+  const chapters = await BookChapter.insertMany(args);
   return chapters;
 };
