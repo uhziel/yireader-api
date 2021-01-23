@@ -6,13 +6,14 @@ import {BookChapterInterface} from './BookChapter';
 import {BookSourceInterface} from './BookSource';
 import {BookFileInterface} from './BookFile';
 
-interface CatalogEntry {
+interface ChapterEntry {
   name: string;
-  chapterUrl: string;
-  chapter: BookChapterInterface['_id'];
+  url: string;
+  chapter?: BookChapterInterface['_id'];
+  subEntries?: ChapterEntry[];
 }
 
-interface BookInterface extends Document {
+export interface BookInterface extends Document {
   user: UserInterface['_id'];
   lastAccessTime: Date;
   name: string;
@@ -26,10 +27,26 @@ interface BookInterface extends Document {
   lastUpdateTime: string;
   lastFetchTime: Date;
   catalogUrl: string;
-  catalog: CatalogEntry[];
+  toc: ChapterEntry[];
   bookSource: BookSourceInterface;
   bookFile: BookFileInterface;
 }
+
+const chapterEntrySchema = new Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+  url: {
+    type: String,
+    required: true,
+  },
+  chapter: {
+    type: Schema.Types.ObjectId,
+    ref: 'BookChapter',
+  },
+  subEntries: [this],
+});
 
 const bookSchema = new Schema({
   user: {
@@ -65,16 +82,7 @@ const bookSchema = new Schema({
     default: 0,
   },
   catalogUrl: String,
-  catalog: [
-    {
-      name: String,
-      chapterUrl: String,
-      chapter: {
-        type: Schema.Types.ObjectId,
-        ref: 'BookChapter',
-      },
-    },
-  ],
+  toc: [chapterEntrySchema!]!,
   bookSource: {
     type: Schema.Types.ObjectId,
     ref: 'BookSource',

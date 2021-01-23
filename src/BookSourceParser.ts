@@ -174,7 +174,7 @@ export async function parseSearch(
 }
 
 ////////////////////////////////
-interface ReqDataDetail {
+export interface ReqDataDetail {
   name?: string;
   author?: string;
   summary?: string;
@@ -458,4 +458,53 @@ export async function parseChapter(
   }
   chapterResult.content = allP.join('\n');
   return chapterResult;
+}
+
+////////////////////////////////
+
+interface Author {
+  name: string;
+}
+interface BookResult {
+  author: Author;
+  catalog: string;
+  cover: string;
+  lastChapter: string;
+  name: string;
+  status: string;
+  summary: string;
+  update: string;
+  chapters: CatalogEntry[];
+}
+export async function parseBook(
+  bookSource: BookSource,
+  reqData: ReqDataDetail
+) {
+  const bookResult: BookResult = {
+    author: {
+      name: '',
+    },
+    catalog: '',
+    cover: '',
+    lastChapter: '',
+    name: '',
+    status: '',
+    summary: '',
+    update: '',
+    chapters: [],
+  };
+
+  const bookDetail = await parseDetail(bookSource, reqData);
+  bookResult.author.name = bookDetail.author;
+  bookResult.catalog = bookDetail.catalog;
+  bookResult.cover = bookDetail.cover;
+  bookResult.lastChapter = bookDetail.lastChapter;
+  bookResult.name = bookDetail.name;
+  bookResult.status = bookDetail.status;
+  bookResult.summary = bookDetail.summary;
+  bookResult.update = bookDetail.update;
+  const bookCatalog = await parseCatalog(bookSource, bookDetail);
+  bookResult.chapters = bookCatalog;
+
+  return bookResult;
 }

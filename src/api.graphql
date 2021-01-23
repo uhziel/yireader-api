@@ -9,6 +9,11 @@ type Query {
   webResource(url: String!): WebResource
 
   authors: [Author!]!
+
+  books: [Book!]!
+  book(id: ID!): Book
+
+  bookChapter(id: ID!): BookChapter
 }
 
 type Mutation {
@@ -22,6 +27,9 @@ type Mutation {
   createWebResource(url: String!): WebResource
 
   createAuthor(name: String!): Author
+
+  createBook(bookSourceId: ID!, url: String!): Book
+  deleteBook(id: ID!): Boolean
 }
 
 """表示一个书源"""
@@ -47,4 +55,27 @@ type WebResource {
 type Author {
   id: ID!
   name: String!
+}
+
+type Book {
+  id: ID!
+  name: String!
+  author: Author!
+  coverUrl: String
+  lastChapter: String
+  status: String
+  summary: String
+  toc: [ChapterEntry!]!
+}
+
+type ChapterEntry {
+  name: String!
+  url: String!
+  bookChapter: ID
+}
+
+type BookChapter {
+  id: ID!
+  name: String!
+  data: String!
 }
