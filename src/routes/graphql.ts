@@ -15,7 +15,12 @@ import {
   createWebResource,
 } from '../resolvers/WebResource';
 import {authors, createAuthor} from '../resolvers/Author';
-import {books, createBook} from '../resolvers/Book';
+import {books, createBook, deleteBook} from '../resolvers/Book';
+import {
+  bookChapter,
+  createBookChapter,
+  createBookChapters,
+} from '../resolvers/BookChapter';
 
 const router = express.Router();
 
@@ -36,6 +41,11 @@ const root = {
 
   books,
   createBook,
+  deleteBook,
+
+  bookChapter,
+  createBookChapter,
+  createBookChapters,
 };
 
 router.use(

@@ -30,6 +30,8 @@ type Mutation {
 
   createBook(bookSourceId: ID!, url: String!): Book
   deleteBook(id: ID!): Boolean
+
+  createBookChapter(name: String!, url: String!): BookChapter
 }
 
 """表示一个书源"""
@@ -77,5 +79,5 @@ type ChapterEntry {
 type BookChapter {
   id: ID!
   name: String!
-  data: String!
+  data: String
 }

@@ -10,7 +10,8 @@ interface CreateBookInput {
 }
 
 export const books = async () => {
-  return await Book.find({});
+  const books = await Book.find({});
+  return await Book.populate(books, 'author');
 };
 
 export const createBook = async (args: CreateBookInput) => {
@@ -57,4 +58,13 @@ export const createBook = async (args: CreateBookInput) => {
   await book.save();
   await book.populate('author').execPopulate();
   return book;
+};
+
+interface DeleteBookInput {
+  id: string;
+}
+
+export const deleteBook = async (args: DeleteBookInput) => {
+  await Book.deleteOne({_id: args.id});
+  return true;
 };

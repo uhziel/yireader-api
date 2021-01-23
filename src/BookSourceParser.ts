@@ -344,10 +344,10 @@ export async function parseCatalog(
 }
 
 ////////////////////////////////
-interface ReqDataChapter {
-  name: string;
+export interface ReqDataChapter {
+  name?: string;
   url: string;
-  useLevel: boolean;
+  useLevel?: boolean;
 }
 
 export function isReqDataChapter(reqData: unknown): reqData is ReqDataChapter {

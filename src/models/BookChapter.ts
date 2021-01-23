@@ -1,11 +1,9 @@
 import {Schema, Document, model} from 'mongoose';
-import {WebResourceInterface} from './WebResource';
-
 export interface BookChapterInterface extends Document {
   name: string;
   url: string;
-  firstAccessTime: Date;
-  data: WebResourceInterface['_id'];
+  firstAccessTime?: Date;
+  data?: string;
 }
 
 const bookChapterSchema = new Schema({
@@ -19,12 +17,8 @@ const bookChapterSchema = new Schema({
   },
   firstAccessTime: {
     type: Date,
-    default: 0,
   },
-  data: {
-    type: Schema.Types.ObjectId,
-    ref: 'WebResource',
-  },
+  data: String,
 });
 
 export default model<BookChapterInterface>('BookChapter', bookChapterSchema);
