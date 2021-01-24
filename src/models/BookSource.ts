@@ -1,6 +1,7 @@
 import {Schema, Document, model} from 'mongoose';
-
+import {UserInterface} from './User';
 export interface BookSourceInterface extends Document {
+  user: UserInterface['_id'];
   downloadUrl: string;
   name: string;
   url: string;
@@ -11,6 +12,11 @@ export interface BookSourceInterface extends Document {
 }
 
 const bookSourceSchema = new Schema({
+  user: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: 'User',
+  },
   downloadUrl: {
     type: String,
     required: true,

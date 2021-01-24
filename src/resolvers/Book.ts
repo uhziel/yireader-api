@@ -4,22 +4,15 @@ import {parseBook, ReqDataDetail} from '../BookSourceParser';
 import {createAuthor} from '../resolvers/Author';
 import {createBookChapters} from '../resolvers/BookChapter';
 import {createWebResource} from '../resolvers/WebResource';
+import {Request} from 'express';
 
 interface CreateBookInput {
   bookSourceId: string;
   url: string;
 }
 
-interface UserInfo {
-  id: string;
-  username: string;
-}
-interface Request {
-  user: UserInfo;
-}
-
 export const books = async (_: unknown, req: Request) => {
-  const books = await Book.find({user: req.user.id});
+  const books = await Book.find({user: req.user?.id});
   return await Book.populate(books, 'author');
 };
 
@@ -44,7 +37,7 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
   });
 
   const book = new Book({
-    user: req.user.id,
+    user: req.user?.id,
     name: result.name,
     author: author.id,
     coverUrl: result.cover,

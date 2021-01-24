@@ -1,27 +1,32 @@
 import BookSource from '../models/BookSource';
 import axios from 'axios';
 import {BookSource as BookSourceContent} from '../BookSourceMgr';
+import {Request} from 'express';
 
 interface CreateBookSourceInput {
   downloadUrl: string;
 }
 
 interface EnableSearchBookSourceInput {
-  _id: string;
+  id: string;
   value: boolean;
 }
 
 interface DeleteBookSourceInput {
-  _id: string;
+  id: string;
 }
 
-export const bookSources = async () => {
-  const bookSources = await BookSource.find({});
+export const bookSources = async (_: unknown, req: Request) => {
+  const bookSources = await BookSource.find({user: req.user?.id});
   return bookSources;
 };
 
-export const createBookSource = async (args: CreateBookSourceInput) => {
+export const createBookSource = async (
+  args: CreateBookSourceInput,
+  req: Request
+) => {
   const bookSourceDoc = await BookSource.findOne({
+    user: req.user?.id,
     downloadUrl: args.downloadUrl,
   });
   if (bookSourceDoc) {
@@ -36,6 +41,7 @@ export const createBookSource = async (args: CreateBookSourceInput) => {
   }
 
   const newBookSourceDoc = new BookSource({
+    user: req.user?.id,
     downloadUrl: args.downloadUrl,
     name: bookSourceContent.name,
     url: bookSourceContent.url,
@@ -49,18 +55,26 @@ export const createBookSource = async (args: CreateBookSourceInput) => {
 };
 
 export const enableSearchBookSource = async (
-  args: EnableSearchBookSourceInput
+  args: EnableSearchBookSourceInput,
+  req: Request
 ) => {
-  const bookSource = await BookSource.findById(args._id);
+  const bookSource = await BookSource.findOne({
+    _id: args.id,
+    user: req.user?.id,
+  });
   if (!bookSource) {
     return false;
   }
+
   bookSource.enableSearch = args.value;
   await bookSource.save();
   return true;
 };
 
-export const deleteBookSource = async (args: DeleteBookSourceInput) => {
-  await BookSource.deleteOne({_id: args._id});
+export const deleteBookSource = async (
+  args: DeleteBookSourceInput,
+  req: Request
+) => {
+  await BookSource.deleteOne({_id: args.id, user: req.user?.id});
   return true;
 };

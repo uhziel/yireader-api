@@ -22,6 +22,7 @@ connectMongodb(MONGODB_URI, {
   });
 
 import * as express from 'express';
+import jwt from './middlewares/jwt';
 
 import searchRouter from './routes/search';
 import detailRouter from './routes/detail';
@@ -39,16 +40,7 @@ app.disable('x-powered-by');
 app.use(express.json());
 app.use(express.static('dist'));
 
-app.use((req, res, next) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const tmpreq: any = req;
-  const user = {
-    id: '5ff9cbbd41703a3b6750fc18',
-    username: 'user101',
-  };
-  tmpreq.user = user;
-  next();
-});
+app.use(jwt);
 
 app.use('/search', searchRouter);
 app.use('/detail', detailRouter);
