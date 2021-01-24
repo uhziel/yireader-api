@@ -1,4 +1,5 @@
 import {readFileSync} from 'fs';
+import BookSource from './models/BookSource';
 
 const bookSourceFiles = [
   'jueshitangmen.info.json',
@@ -136,5 +137,20 @@ class BookSourceMgr {
 
 const mgr = new BookSourceMgr();
 mgr.init();
+
+export async function getEnabledBookSources(userId: string) {
+  const bookSourceDocs = await BookSource.find({
+    user: userId,
+    enableSearch: true,
+  });
+  const bookSources: BookSource[] = [];
+  for (const bookSourceDoc of bookSourceDocs) {
+    const bookSource = JSON.parse(bookSourceDoc.data);
+    if (bookSource) {
+      bookSources.push(bookSource);
+    }
+  }
+  return bookSources;
+}
 
 export default mgr;
