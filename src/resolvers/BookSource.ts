@@ -1,4 +1,5 @@
 import BookSource from '../models/BookSource';
+import User from '../models/User';
 import axios from 'axios';
 import {BookSource as BookSourceContent} from '../BookSourceMgr';
 import {Request} from 'express';
@@ -17,8 +18,18 @@ interface DeleteBookSourceInput {
 }
 
 export const bookSources = async (_: unknown, req: Request) => {
-  const bookSources = await BookSource.find({user: req.user?.id});
-  return bookSources;
+  const user = await User.findById(req.user?.id, 'bookSources');
+  if (!user) {
+    return [];
+  }
+  await user
+    .populate({
+      path: 'bookSources',
+      match: {enableSearch: true},
+    })
+    .execPopulate();
+
+  return user.bookSources;
 };
 
 export const createBookSource = async (
@@ -40,6 +51,11 @@ export const createBookSource = async (
     return null;
   }
 
+  const user = await User.findById(req.user?.id, 'bookSources');
+  if (!user) {
+    return null;
+  }
+
   const newBookSourceDoc = new BookSource({
     user: req.user?.id,
     downloadUrl: args.downloadUrl,
@@ -50,6 +66,9 @@ export const createBookSource = async (
     enableSearch: true,
   });
   await newBookSourceDoc.save();
+
+  user.bookSources.push(newBookSourceDoc.id);
+  await user.save();
 
   return newBookSourceDoc;
 };
@@ -75,6 +94,16 @@ export const deleteBookSource = async (
   args: DeleteBookSourceInput,
   req: Request
 ) => {
+  const user = await User.findById(req.user?.id, 'bookSources');
+  if (!user) {
+    return false;
+  }
+  const pos = user.bookSources.indexOf(args.id);
+  if (pos === -1) {
+    return false;
+  }
+  user.bookSources.pull(args.id);
+  await user.save();
   await BookSource.deleteOne({_id: args.id, user: req.user?.id});
   return true;
 };
