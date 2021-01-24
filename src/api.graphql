@@ -21,6 +21,10 @@ type Query {
 type Mutation {
   """创建书源"""
   createBookSource(downloadUrl: String!): BookSource
+  """向上移动书源"""
+  moveUpBookSource(id: ID!): Boolean
+  """向下移动书源"""
+  moveDownBookSource(id: ID!): Boolean
   """启用书源"""
   enableSearchBookSource(id: ID!, value: Boolean): Boolean
   """删除书源"""

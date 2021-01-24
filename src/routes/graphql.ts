@@ -6,6 +6,8 @@ import {readFileSync} from 'fs';
 import {
   bookSources,
   createBookSource,
+  moveUpBookSource,
+  moveDownBookSource,
   enableSearchBookSource,
   deleteBookSource,
 } from '../resolvers/BookSource';
@@ -31,6 +33,8 @@ const scheme = buildSchema(readFileSync('src/api.graphql', 'utf8'));
 const root = {
   bookSources,
   createBookSource,
+  moveUpBookSource,
+  moveDownBookSource,
   enableSearchBookSource,
   deleteBookSource,
 

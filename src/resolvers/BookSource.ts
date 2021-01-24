@@ -73,6 +73,56 @@ export const createBookSource = async (
   return newBookSourceDoc;
 };
 
+interface MoveUpBookSourceInput {
+  id: string;
+}
+
+export const moveUpBookSource = async (
+  args: MoveUpBookSourceInput,
+  req: Request
+) => {
+  const user = await User.findById(req.user?.id, 'bookSources');
+  if (!user) {
+    return false;
+  }
+
+  const pos = user.bookSources.indexOf(args.id);
+  if (pos === -1 || pos === 0) {
+    return false;
+  }
+  const tmp: string = user.bookSources[pos];
+  user.bookSources.set(pos, user.bookSources[pos - 1]);
+  user.bookSources.set(pos - 1, tmp);
+  await user.save();
+
+  return true;
+};
+
+interface MoveDownBookSourceInput {
+  id: string;
+}
+
+export const moveDownBookSource = async (
+  args: MoveDownBookSourceInput,
+  req: Request
+) => {
+  const user = await User.findById(req.user?.id, 'bookSources');
+  if (!user) {
+    return false;
+  }
+
+  const pos = user.bookSources.indexOf(args.id);
+  if (pos === -1 || pos === user.bookSources.length - 1) {
+    return false;
+  }
+  const tmp: string = user.bookSources[pos];
+  user.bookSources.set(pos, user.bookSources[pos + 1]);
+  user.bookSources.set(pos + 1, tmp);
+  await user.save();
+
+  return true;
+};
+
 export const enableSearchBookSource = async (
   args: EnableSearchBookSourceInput,
   req: Request
