@@ -17,8 +17,11 @@ interface DeleteBookSourceInput {
   id: string;
 }
 
-export const bookSources = async (_: unknown, req: Request) => {
-  const user = await User.findById(req.user?.id, 'bookSources');
+export const bookSourcesByUserId = async (userId?: string) => {
+  if (!userId) {
+    return [];
+  }
+  const user = await User.findById(userId, 'bookSources');
   if (!user) {
     return [];
   }
@@ -30,6 +33,10 @@ export const bookSources = async (_: unknown, req: Request) => {
     .execPopulate();
 
   return user.bookSources;
+};
+
+export const bookSources = async (_: unknown, req: Request) => {
+  return bookSourcesByUserId(req.user?.id);
 };
 
 export const createBookSource = async (
