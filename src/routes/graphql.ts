@@ -22,6 +22,8 @@ import {
   createBookChapters,
 } from '../resolvers/BookChapter';
 
+import {search} from '../resolvers/Search';
+
 const router = express.Router();
 
 const scheme = buildSchema(readFileSync('src/api.graphql', 'utf8'));
@@ -46,6 +48,8 @@ const root = {
   bookChapter,
   createBookChapter,
   createBookChapters,
+
+  search,
 };
 
 router.use(

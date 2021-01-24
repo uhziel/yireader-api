@@ -79,7 +79,7 @@ axiosWithEncoding.interceptors.response.use(response => {
   return response;
 });
 
-interface ResDataSearchEntry {
+export interface ResDataSearchEntry {
   name: string;
   author: string;
   summary: string;
@@ -87,7 +87,7 @@ interface ResDataSearchEntry {
   detail: string;
 }
 
-type ResDataSearch = ResDataSearchEntry[];
+export type ResDataSearch = ResDataSearchEntry[];
 
 interface BsHttpReq {
   reqUrl: string;

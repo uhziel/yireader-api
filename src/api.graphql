@@ -14,6 +14,8 @@ type Query {
   book(id: ID!): Book
 
   bookChapter(id: ID!): BookChapter
+
+  search(name: String!): [SearchResult!]!
 }
 
 type Mutation {
@@ -80,4 +82,12 @@ type BookChapter {
   id: ID!
   name: String!
   data: String
+}
+
+type SearchResult {
+  name: String!
+  author: String!
+  summary: String!
+  cover: String!
+  detail: String!
 }
