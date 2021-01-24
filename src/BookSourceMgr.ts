@@ -140,7 +140,7 @@ const mgr = new BookSourceMgr();
 mgr.init();
 
 export async function getEnabledBookSources(userId: string) {
-  const bookSourceDocs = await bookSourcesByUserId(userId);
+  const bookSourceDocs = await bookSourcesByUserId(userId, true);
 
   const bookSources: BookSource[] = [];
   for (const bookSourceDoc of bookSourceDocs) {

@@ -3,6 +3,7 @@ import User from '../models/User';
 import axios from 'axios';
 import {BookSource as BookSourceContent} from '../BookSourceMgr';
 import {Request} from 'express';
+import {PopulateOptions} from 'mongoose';
 
 interface CreateBookSourceInput {
   downloadUrl: string;
@@ -17,7 +18,10 @@ interface DeleteBookSourceInput {
   id: string;
 }
 
-export const bookSourcesByUserId = async (userId?: string) => {
+export const bookSourcesByUserId = async (
+  userId?: string,
+  filterEanbleSearch?: boolean
+) => {
   if (!userId) {
     return [];
   }
@@ -25,12 +29,13 @@ export const bookSourcesByUserId = async (userId?: string) => {
   if (!user) {
     return [];
   }
-  await user
-    .populate({
-      path: 'bookSources',
-      match: {enableSearch: true},
-    })
-    .execPopulate();
+  const opts: PopulateOptions = {
+    path: 'bookSources',
+  };
+  if (filterEanbleSearch) {
+    opts.match = {enableSearch: true};
+  }
+  await user.populate(opts).execPopulate();
 
   return user.bookSources;
 };
