@@ -2,6 +2,8 @@
 # Scalar types 是 Int、Float、String、Boolean、ID，没有 Buffer、Date
 
 type Query {
+  version: String!
+
   """查询所有的书源"""
   bookSources: [BookSource!]!
   

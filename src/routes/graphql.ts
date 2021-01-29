@@ -25,6 +25,7 @@ import {
 } from '../resolvers/BookChapter';
 
 import {search} from '../resolvers/Search';
+import {version} from '../resolvers/Version';
 
 const router = express.Router();
 
@@ -54,6 +55,7 @@ const root = {
   createBookChapters,
 
   search,
+  version,
 };
 
 router.use(
