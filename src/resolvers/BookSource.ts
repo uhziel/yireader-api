@@ -53,19 +53,19 @@ export const createBookSource = async (
     downloadUrl: args.downloadUrl,
   });
   if (bookSourceDoc) {
-    return null;
+    throw new Error('不要重复添加书源');
   }
 
   const response = await axios.get(args.downloadUrl);
   const bookSourceContent: BookSourceContent = response.data;
 
-  if (!bookSourceContent) {
-    return null;
+  if (!bookSourceContent || typeof bookSourceContent === 'string') {
+    throw new Error('提供的链接不是有效的书源');
   }
 
   const user = await User.findById(req.user?.id, 'bookSources');
   if (!user) {
-    return null;
+    throw new Error('登录信息不对，无法添加书源');
   }
 
   const newBookSourceDoc = new BookSource({
@@ -95,12 +95,12 @@ export const moveUpBookSource = async (
 ) => {
   const user = await User.findById(req.user?.id, 'bookSources');
   if (!user) {
-    return false;
+    throw new Error('登录信息不对，无法上移该书源');
   }
 
   const pos = user.bookSources.indexOf(args.id);
   if (pos === -1 || pos === 0) {
-    return false;
+    throw new Error('无法上移该书源');
   }
   const tmp: string = user.bookSources[pos];
   user.bookSources.set(pos, user.bookSources[pos - 1]);
@@ -120,12 +120,12 @@ export const moveDownBookSource = async (
 ) => {
   const user = await User.findById(req.user?.id, 'bookSources');
   if (!user) {
-    return false;
+    throw new Error('登录信息不对，无法下移该书源');
   }
 
   const pos = user.bookSources.indexOf(args.id);
   if (pos === -1 || pos === user.bookSources.length - 1) {
-    return false;
+    throw new Error('无法下移该书源');
   }
   const tmp: string = user.bookSources[pos];
   user.bookSources.set(pos, user.bookSources[pos + 1]);
