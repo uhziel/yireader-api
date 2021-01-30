@@ -100,9 +100,13 @@ type SearchResult {
   bookSourceId: ID!
 }
 
+input AuthorInput {
+  name: String!
+}
+
 input BookInfo {
   name: String!
-  author: String!
+  author: AuthorInput!
   summary: String!
   cover: String!
   detail: String!

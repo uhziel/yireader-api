@@ -10,9 +10,13 @@ interface CreateBookInput {
   info: BookInfo;
 }
 
+interface AuthorInput {
+  name: string;
+}
+
 interface BookInfo {
   name: string;
-  author: string;
+  author: AuthorInput;
   summary: string;
   cover: string;
   detail: string;
@@ -44,7 +48,14 @@ async function bookFromWeb(bookInfo: BookInfo) {
     throw new Error('通过书源id解析书失败。');
   }
 
-  const result = await parseBook(bookSource, bookInfo);
+  const reqDataDetail: ReqDataDetail = {
+    name: bookInfo.name,
+    author: bookInfo.author.name,
+    summary: bookInfo.summary,
+    cover: bookInfo.cover,
+    detail: bookInfo.detail,
+  };
+  const result = await parseBook(bookSource, reqDataDetail);
   result.bookSource = bookInfo.bookSourceId;
   return result;
 }
@@ -58,7 +69,7 @@ export const book = async (args: BookByInfoInput, req: Request) => {
 };
 
 async function haveSameBook(info: BookInfo, userId: string) {
-  const authorId = await getAuthorId(info.author);
+  const authorId = await getAuthorId(info.author.name);
   const isExist = await Book.exists({
     user: userId,
     name: info.name,
