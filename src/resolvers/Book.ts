@@ -1,14 +1,13 @@
 import Book from '../models/Book';
-import bookSourceMgr, {getBookSource} from '../BookSourceMgr';
+import {getBookSource} from '../BookSourceMgr';
 import {parseBook, ReqDataDetail} from '../BookSourceParser';
-import {createAuthor} from '../resolvers/Author';
+import {getAuthorId} from '../resolvers/Author';
 import {createBookChapters} from '../resolvers/BookChapter';
 import {createWebResource} from '../resolvers/WebResource';
 import {Request} from 'express';
 
 interface CreateBookInput {
-  bookSourceId: string;
-  url: string;
+  info: BookInfo;
 }
 
 interface BookInfo {
@@ -58,21 +57,35 @@ export const book = async (args: BookByInfoInput, req: Request) => {
   return await bookFromWeb(args.info);
 };
 
+async function haveSameBook(info: BookInfo, userId: string) {
+  const authorId = await getAuthorId(info.author);
+  const isExist = await Book.exists({
+    user: userId,
+    name: info.name,
+    author: authorId,
+  });
+
+  return isExist;
+}
+
 export const createBook = async (args: CreateBookInput, req: Request) => {
-  args.bookSourceId = '600bd7031e52d1375f545d0b';
-  const detailURL = new URL(args.url);
-  const bookSource = bookSourceMgr.getBookSource(detailURL.hostname);
+  const isExist = await haveSameBook(args.info, req.user.id);
+  if (isExist) {
+    throw new Error('你已经添加过这本书');
+  }
+
+  const bookSource = await getBookSource(args.info.bookSourceId);
   if (!bookSource) {
-    throw new Error(`Cannot find booksource through url: ${args.url}`);
+    throw new Error(
+      `Cannot find booksource. bookSourceId: ${args.info.bookSourceId}`
+    );
   }
   const reqData: ReqDataDetail = {
-    detail: args.url,
+    detail: args.info.detail,
   };
   const result = await parseBook(bookSource, reqData);
 
-  const author = await createAuthor({
-    name: result.author.name,
-  });
+  const authorId = await getAuthorId(result.author.name);
 
   const cover = await createWebResource({
     url: result.cover,
@@ -81,17 +94,17 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
   const book = new Book({
     user: req.user?.id,
     name: result.name,
-    author: author.id,
+    author: authorId,
     coverUrl: result.cover,
     cover: cover.id,
     lastChapter: result.lastChapter,
     status: result.status,
     summary: result.summary,
-    url: args.url,
+    url: args.info.detail,
     lastUpdateTime: result.update,
     catalogUrl: result.catalog,
     toc: [],
-    bookSource: args.bookSourceId,
+    bookSource: args.info.bookSourceId,
   });
   const bookChapters = await createBookChapters(result.toc);
   for (const chapter of bookChapters) {

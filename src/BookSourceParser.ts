@@ -513,7 +513,8 @@ export async function parseBook(
   bookResult.status = bookDetail.status;
   bookResult.summary = bookDetail.summary;
   bookResult.update = bookDetail.update;
-  const bookCatalog = await parseCatalog(bookSource, bookDetail);
+  let bookCatalog = await parseCatalog(bookSource, bookDetail);
+  bookCatalog = bookCatalog.filter(entry => entry.url.length > 0);
   bookResult.toc = bookCatalog;
 
   return bookResult;
