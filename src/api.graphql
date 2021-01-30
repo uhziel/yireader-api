@@ -13,9 +13,9 @@ type Query {
   authors: [Author!]!
 
   books: [Book!]!
-  book(id: ID!): Book
+  book(info: BookInfo!): Book
 
-  bookChapter(id: ID!): BookChapter
+  bookChapter(info: BookChapterInfo!): BookChapter
 
   search(name: String!): [SearchResult!]!
 }
@@ -68,13 +68,14 @@ type Author {
 }
 
 type Book {
-  id: ID!
+  id: ID
   name: String!
   author: Author!
   coverUrl: String
   lastChapter: String
   status: String
   summary: String
+  bookSource: ID
   toc: [ChapterEntry!]!
 }
 
@@ -85,7 +86,7 @@ type ChapterEntry {
 }
 
 type BookChapter {
-  id: ID!
+  id: ID
   name: String!
   data: String
 }
@@ -96,4 +97,22 @@ type SearchResult {
   summary: String!
   cover: String!
   detail: String!
+  bookSourceId: ID!
+}
+
+input BookInfo {
+  name: String!
+  author: String!
+  summary: String!
+  cover: String!
+  detail: String!
+  bookSourceId: ID!
+  bookId: ID
+}
+
+input BookChapterInfo {
+  name: String
+  url: String
+  bookSourceId: ID!
+  bookChapterId: ID
 }

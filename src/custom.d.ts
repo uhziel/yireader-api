@@ -5,6 +5,6 @@ interface UserInfo {
 
 declare namespace Express {
   export interface Request {
-    user?: UserInfo;
+    user: UserInfo;
   }
 }

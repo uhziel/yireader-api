@@ -17,7 +17,7 @@ import {
   createWebResource,
 } from '../resolvers/WebResource';
 import {authors, createAuthor} from '../resolvers/Author';
-import {books, createBook, deleteBook} from '../resolvers/Book';
+import {books, book, createBook, deleteBook} from '../resolvers/Book';
 import {
   bookChapter,
   createBookChapter,
@@ -47,6 +47,7 @@ const root = {
   createAuthor,
 
   books,
+  book,
   createBook,
   deleteBook,
 

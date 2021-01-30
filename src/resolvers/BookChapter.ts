@@ -1,13 +1,19 @@
 import BookChapter from '../models/BookChapter';
-import bookSourceMgr from '../BookSourceMgr';
+import bookSourceMgr, {getBookSource} from '../BookSourceMgr';
 import {parseChapter, ReqDataChapter} from '../BookSourceParser';
 
+interface BookChapterInfo {
+  name: string;
+  url: string;
+  bookSourceId: string;
+  bookChapterId?: string;
+}
 interface BookChapterInput {
-  id: string;
+  info: BookChapterInfo;
 }
 
-export const bookChapter = async (args: BookChapterInput) => {
-  const chapter = await BookChapter.findById(args.id);
+async function bookChapterFromDb(info: BookChapterInfo) {
+  const chapter = await BookChapter.findById(info.bookChapterId);
   if (!chapter) {
     return null;
   }
@@ -28,6 +34,32 @@ export const bookChapter = async (args: BookChapterInput) => {
   }
 
   return chapter;
+}
+
+async function bookChapterFromWeb(info: BookChapterInfo) {
+  //读取书源
+  const bookSource = await getBookSource(info.bookSourceId);
+  if (!bookSource) {
+    throw new Error('通过书源id解析章节失败。');
+  }
+
+  const reqData: ReqDataChapter = {
+    url: info.url,
+  };
+  const result = {
+    name: info.name,
+    data: '',
+  };
+  result.data = (await parseChapter(bookSource, reqData)).content;
+  return result;
+}
+
+export const bookChapter = async (args: BookChapterInput) => {
+  if (args.info.bookChapterId) {
+    return await bookChapterFromDb(args.info);
+  }
+
+  return await bookChapterFromWeb(args.info);
 };
 
 interface CreateBookChapterInput {

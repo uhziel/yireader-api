@@ -1,5 +1,5 @@
 import Book from '../models/Book';
-import bookSourceMgr from '../BookSourceMgr';
+import bookSourceMgr, {getBookSource} from '../BookSourceMgr';
 import {parseBook, ReqDataDetail} from '../BookSourceParser';
 import {createAuthor} from '../resolvers/Author';
 import {createBookChapters} from '../resolvers/BookChapter';
@@ -11,9 +11,51 @@ interface CreateBookInput {
   url: string;
 }
 
+interface BookInfo {
+  name: string;
+  author: string;
+  summary: string;
+  cover: string;
+  detail: string;
+  bookSourceId: string;
+  bookId?: string;
+}
+interface BookByInfoInput {
+  info: BookInfo;
+}
+
 export const books = async (_: unknown, req: Request) => {
   const books = await Book.find({user: req.user?.id});
   return await Book.populate(books, 'author');
+};
+
+async function bookFromDb(bookInfo: BookInfo, userId: string) {
+  const book = await Book.findOne({_id: bookInfo.bookId, user: userId});
+  if (!book) {
+    throw new Error('通过书的id查找书失败。');
+  }
+  await book.populate('author').execPopulate();
+  return book;
+}
+
+async function bookFromWeb(bookInfo: BookInfo) {
+  //读取书源
+  const bookSource = await getBookSource(bookInfo.bookSourceId);
+  if (!bookSource) {
+    throw new Error('通过书源id解析书失败。');
+  }
+
+  const result = await parseBook(bookSource, bookInfo);
+  result.bookSource = bookInfo.bookSourceId;
+  return result;
+}
+
+export const book = async (args: BookByInfoInput, req: Request) => {
+  if (args.info.bookId) {
+    return await bookFromDb(args.info, req.user.id);
+  }
+
+  return await bookFromWeb(args.info);
 };
 
 export const createBook = async (args: CreateBookInput, req: Request) => {
@@ -51,7 +93,7 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
     toc: [],
     bookSource: args.bookSourceId,
   });
-  const bookChapters = await createBookChapters(result.chapters);
+  const bookChapters = await createBookChapters(result.toc);
   for (const chapter of bookChapters) {
     book.toc.push({
       name: chapter.name,

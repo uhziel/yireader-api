@@ -85,6 +85,7 @@ export interface ResDataSearchEntry {
   summary: string;
   cover: string;
   detail: string;
+  bookSourceId?: string;
 }
 
 export type ResDataSearch = ResDataSearchEntry[];
@@ -151,7 +152,13 @@ export async function parseSearch(
   }
 
   for (const iterator of contentBlock.query(bookSource.search.list)) {
-    const entry = {name: '', author: '', summary: '', cover: '', detail: ''};
+    const entry: ResDataSearchEntry = {
+      name: '',
+      author: '',
+      summary: '',
+      cover: '',
+      detail: '',
+    };
     entry.name = iterator.value(bookSource.search.name, 'text');
     if (bookSource.search.author) {
       entry.author = iterator.value(bookSource.search.author, 'text');
@@ -168,6 +175,7 @@ export async function parseSearch(
     } else {
       entry.detail = attrDetail;
     }
+    entry.bookSourceId = bookSource.id;
     searchResult.push(entry);
   }
   return searchResult;
@@ -465,7 +473,7 @@ export async function parseChapter(
 interface Author {
   name: string;
 }
-interface BookResult {
+export interface BookResult {
   author: Author;
   catalog: string;
   cover: string;
@@ -474,7 +482,8 @@ interface BookResult {
   status: string;
   summary: string;
   update: string;
-  chapters: CatalogEntry[];
+  bookSource: string;
+  toc: CatalogEntry[];
 }
 export async function parseBook(
   bookSource: BookSource,
@@ -491,7 +500,8 @@ export async function parseBook(
     status: '',
     summary: '',
     update: '',
-    chapters: [],
+    bookSource: '',
+    toc: [],
   };
 
   const bookDetail = await parseDetail(bookSource, reqData);
@@ -504,7 +514,7 @@ export async function parseBook(
   bookResult.summary = bookDetail.summary;
   bookResult.update = bookDetail.update;
   const bookCatalog = await parseCatalog(bookSource, bookDetail);
-  bookResult.chapters = bookCatalog;
+  bookResult.toc = bookCatalog;
 
   return bookResult;
 }
