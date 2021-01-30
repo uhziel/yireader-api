@@ -123,7 +123,7 @@ interface DeleteBookInput {
   id: string;
 }
 
-export const deleteBook = async (args: DeleteBookInput) => {
-  await Book.deleteOne({_id: args.id});
+export const deleteBook = async (args: DeleteBookInput, req: Request) => {
+  await Book.deleteOne({_id: args.id, user: req.user.id});
   return true;
 };
