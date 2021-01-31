@@ -476,7 +476,7 @@ interface Author {
 export interface BookResult {
   author: Author;
   catalog: string;
-  cover: string;
+  coverUrl: string;
   lastChapter: string;
   name: string;
   status: string;
@@ -494,7 +494,7 @@ export async function parseBook(
       name: '',
     },
     catalog: '',
-    cover: '',
+    coverUrl: '',
     lastChapter: '',
     name: '',
     status: '',
@@ -507,7 +507,7 @@ export async function parseBook(
   const bookDetail = await parseDetail(bookSource, reqData);
   bookResult.author.name = bookDetail.author;
   bookResult.catalog = bookDetail.catalog;
-  bookResult.cover = bookDetail.cover;
+  bookResult.coverUrl = bookDetail.cover;
   bookResult.lastChapter = bookDetail.lastChapter;
   bookResult.name = bookDetail.name;
   bookResult.status = bookDetail.status;

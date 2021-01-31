@@ -72,6 +72,7 @@ type Book {
   name: String!
   author: Author!
   coverUrl: String
+  url: String!
   lastChapter: String
   status: String
   summary: String
@@ -93,10 +94,10 @@ type BookChapter {
 
 type SearchResult {
   name: String!
-  author: String!
+  author: Author!
   summary: String!
-  cover: String!
-  detail: String!
+  coverUrl: String!
+  url: String!
   bookSourceId: ID!
 }
 
@@ -108,8 +109,8 @@ input BookInfo {
   name: String!
   author: AuthorInput!
   summary: String!
-  cover: String!
-  detail: String!
+  coverUrl: String!
+  url: String!
   bookSourceId: ID!
   bookId: ID
 }

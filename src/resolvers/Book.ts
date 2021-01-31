@@ -18,8 +18,8 @@ interface BookInfo {
   name: string;
   author: AuthorInput;
   summary: string;
-  cover: string;
-  detail: string;
+  coverUrl: string;
+  url: string;
   bookSourceId: string;
   bookId?: string;
 }
@@ -52,8 +52,8 @@ async function bookFromWeb(bookInfo: BookInfo) {
     name: bookInfo.name,
     author: bookInfo.author.name,
     summary: bookInfo.summary,
-    cover: bookInfo.cover,
-    detail: bookInfo.detail,
+    cover: bookInfo.coverUrl,
+    detail: bookInfo.url,
   };
   const result = await parseBook(bookSource, reqDataDetail);
   result.bookSource = bookInfo.bookSourceId;
@@ -92,26 +92,26 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
     );
   }
   const reqData: ReqDataDetail = {
-    detail: args.info.detail,
+    detail: args.info.url,
   };
   const result = await parseBook(bookSource, reqData);
 
   const authorId = await getAuthorId(result.author.name);
 
   const cover = await createWebResource({
-    url: result.cover,
+    url: result.coverUrl,
   });
 
   const book = new Book({
     user: req.user?.id,
     name: result.name,
     author: authorId,
-    coverUrl: result.cover,
+    coverUrl: result.coverUrl,
     cover: cover.id,
     lastChapter: result.lastChapter,
     status: result.status,
     summary: result.summary,
-    url: args.info.detail,
+    url: args.info.url,
     lastUpdateTime: result.update,
     catalogUrl: result.catalog,
     toc: [],
