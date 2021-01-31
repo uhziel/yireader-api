@@ -37,6 +37,8 @@ type Mutation {
   createAuthor(name: String!): Author
 
   createBook(info: BookInfo!): Book
+  moveUpBook(id: ID!): Boolean
+  moveDownBook(id: ID!): Boolean
   deleteBook(id: ID!): Boolean
 
   createBookChapter(name: String!, url: String!): BookChapter

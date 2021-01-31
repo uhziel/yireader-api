@@ -5,6 +5,7 @@ import {getAuthorId} from '../resolvers/Author';
 import {createBookChapters} from '../resolvers/BookChapter';
 import {createWebResource} from '../resolvers/WebResource';
 import {Request} from 'express';
+import User from '../models/User';
 
 interface CreateBookInput {
   info: BookInfo;
@@ -28,8 +29,19 @@ interface BookByInfoInput {
 }
 
 export const books = async (_: unknown, req: Request) => {
-  const books = await Book.find({user: req.user?.id});
-  return await Book.populate(books, 'author');
+  const user = await User.findById(req.user.id, 'books');
+  if (!user) {
+    throw new Error('玩家信息不对，无法拉取其书柜信息');
+  }
+  await user
+    .populate({
+      path: 'books',
+      populate: {
+        path: 'author',
+      },
+    })
+    .execPopulate();
+  return user.books;
 };
 
 async function bookFromDb(bookInfo: BookInfo, userId: string) {
@@ -127,6 +139,14 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
   }
   await book.save();
   await book.populate('author').execPopulate();
+
+  const user = await User.findById(req.user?.id, 'books');
+  if (!user) {
+    throw new Error('创建书失败，玩家信息出错。');
+  }
+
+  user.books.push(book.id);
+  await user.save();
   return book;
 };
 
@@ -135,6 +155,62 @@ interface DeleteBookInput {
 }
 
 export const deleteBook = async (args: DeleteBookInput, req: Request) => {
+  const user = await User.findById(req.user?.id, 'books');
+  if (!user) {
+    throw new Error('删除书失败，玩家信息出错。');
+  }
+  const pos = user.books.indexOf(args.id);
+  if (pos === -1) {
+    throw new Error('删除书失败，玩家没有该书');
+  }
+
+  user.books.pull(args.id);
+  await user.save();
+
   await Book.deleteOne({_id: args.id, user: req.user.id});
+  return true;
+};
+
+interface MoveUpBookInput {
+  id: string;
+}
+
+export const moveUpBook = async (args: MoveUpBookInput, req: Request) => {
+  const user = await User.findById(req.user?.id, 'books');
+  if (!user) {
+    throw new Error('登录信息不对，无法上移该书');
+  }
+
+  const pos = user.books.indexOf(args.id);
+  if (pos === -1 || pos === 0) {
+    throw new Error('无法上移该书');
+  }
+  const tmp: string = user.books[pos];
+  user.books.set(pos, user.books[pos - 1]);
+  user.books.set(pos - 1, tmp);
+  await user.save();
+
+  return true;
+};
+
+interface MoveDownBookInput {
+  id: string;
+}
+
+export const moveDownBook = async (args: MoveDownBookInput, req: Request) => {
+  const user = await User.findById(req.user?.id, 'books');
+  if (!user) {
+    throw new Error('登录信息不对，无法下移该书');
+  }
+
+  const pos = user.books.indexOf(args.id);
+  if (pos === -1 || pos === user.books.length - 1) {
+    throw new Error('无法下移该书');
+  }
+  const tmp: string = user.books[pos];
+  user.books.set(pos, user.books[pos + 1]);
+  user.books.set(pos + 1, tmp);
+  await user.save();
+
   return true;
 };

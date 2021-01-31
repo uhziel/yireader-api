@@ -17,7 +17,14 @@ import {
   createWebResource,
 } from '../resolvers/WebResource';
 import {authors, createAuthor} from '../resolvers/Author';
-import {books, book, createBook, deleteBook} from '../resolvers/Book';
+import {
+  books,
+  book,
+  createBook,
+  deleteBook,
+  moveUpBook,
+  moveDownBook,
+} from '../resolvers/Book';
 import {
   bookChapter,
   createBookChapter,
@@ -50,6 +57,8 @@ const root = {
   book,
   createBook,
   deleteBook,
+  moveUpBook,
+  moveDownBook,
 
   bookChapter,
   createBookChapter,
