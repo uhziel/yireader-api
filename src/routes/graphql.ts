@@ -20,6 +20,7 @@ import {authors, createAuthor} from '../resolvers/Author';
 import {
   books,
   book,
+  addBookToBookShelf,
   createBook,
   deleteBook,
   moveUpBook,
@@ -55,6 +56,7 @@ const root = {
 
   books,
   book,
+  addBookToBookShelf,
   createBook,
   deleteBook,
   moveUpBook,

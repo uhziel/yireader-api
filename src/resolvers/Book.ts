@@ -41,6 +41,9 @@ export const books = async (_: unknown, req: Request) => {
       },
     })
     .execPopulate();
+  for (const book of user.books) {
+    book.inBookshelf = true;
+  }
   return user.books;
 };
 
@@ -50,10 +53,48 @@ async function bookFromDb(bookInfo: BookInfo, userId: string) {
     throw new Error('通过书的id查找书失败。');
   }
   await book.populate('author').execPopulate();
+  book.inBookshelf = true;
   return book;
 }
 
-async function bookFromWeb(bookInfo: BookInfo) {
+async function getBookByNameAndAuthor(
+  userId: string,
+  name: string,
+  author: string
+) {
+  const authorId = await getAuthorId(author);
+  const book = await Book.findOne({
+    user: userId,
+    name: name,
+    author: authorId,
+  });
+
+  return book;
+}
+
+async function isInBookshelf(bookId: string, userId: string) {
+  const user = await User.findById(userId, 'books');
+  if (!user) {
+    return false;
+  }
+
+  const pos = user.books.indexOf(bookId);
+  return pos !== -1;
+}
+
+async function bookFromWeb(bookInfo: BookInfo, userId: string) {
+  //如果已经有这本书，则直接返回，不再下载
+  const book = await getBookByNameAndAuthor(
+    userId,
+    bookInfo.name,
+    bookInfo.author.name
+  );
+  if (book) {
+    await book.populate('author').execPopulate();
+    book.inBookshelf = await isInBookshelf(book.id, userId);
+    return book;
+  }
+
   //读取书源
   const bookSource = await getBookSource(bookInfo.bookSourceId);
   if (!bookSource) {
@@ -68,8 +109,47 @@ async function bookFromWeb(bookInfo: BookInfo) {
     detail: bookInfo.url,
   };
   const result = await parseBook(bookSource, reqDataDetail);
-  result.bookSource = bookInfo.bookSourceId;
-  return result;
+
+  const authorId = await getAuthorId(result.author.name);
+
+  const cover = await createWebResource({
+    url: result.coverUrl,
+  });
+
+  const newBook = new Book({
+    user: userId,
+    name: result.name,
+    author: authorId,
+    coverUrl: result.coverUrl,
+    cover: cover.id,
+    lastChapter: result.lastChapter,
+    status: result.status,
+    summary: result.summary,
+    url: bookInfo.url,
+    lastUpdateTime: result.update,
+    catalogUrl: result.catalog,
+    toc: [],
+    bookSource: bookInfo.bookSourceId,
+  });
+  const bookChapters = await createBookChapters(result.toc);
+  for (const chapter of bookChapters) {
+    newBook.toc.push({
+      name: chapter.name,
+      url: chapter.url,
+      chapter: chapter.id,
+    });
+  }
+  await newBook.save();
+  await newBook.populate('author').execPopulate();
+
+  const user = await User.findById(userId, 'tmpBooks');
+  if (!user) {
+    throw new Error('创建书失败，玩家信息出错。');
+  }
+
+  user.tmpBooks.push(newBook.id);
+  await user.save();
+  return newBook;
 }
 
 export const book = async (args: BookByInfoInput, req: Request) => {
@@ -77,7 +157,7 @@ export const book = async (args: BookByInfoInput, req: Request) => {
     return await bookFromDb(args.info, req.user.id);
   }
 
-  return await bookFromWeb(args.info);
+  return await bookFromWeb(args.info, req.user.id);
 };
 
 async function haveSameBook(info: BookInfo, userId: string) {
@@ -91,6 +171,38 @@ async function haveSameBook(info: BookInfo, userId: string) {
   return isExist;
 }
 
+interface AddBookToBookShelfInput {
+  id: string;
+}
+
+export const addBookToBookShelf = async (
+  args: AddBookToBookShelfInput,
+  req: Request
+) => {
+  const user = await User.findById(req.user?.id, 'tmpBooks books');
+  if (!user) {
+    throw new Error('登录信息不对，无法添加该书');
+  }
+
+  const pos = user.books.indexOf(args.id);
+  if (pos !== -1) {
+    throw new Error('书架中已经有该书，不需再次添加');
+  }
+
+  const tmpPos = user.tmpBooks.indexOf(args.id);
+  if (tmpPos === -1) {
+    throw new Error('没有该书的缓存，无法添加');
+  }
+
+  user.tmpBooks.pull(args.id);
+  user.books.push(args.id);
+
+  await user.save();
+
+  return true;
+};
+
+//TODO 去掉无用的接口
 export const createBook = async (args: CreateBookInput, req: Request) => {
   const isExist = await haveSameBook(args.info, req.user.id);
   if (isExist) {
@@ -106,7 +218,9 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
   const reqData: ReqDataDetail = {
     detail: args.info.url,
   };
+  console.time('parseBook'); //TODO 去除查看性能的代码
   const result = await parseBook(bookSource, reqData);
+  console.timeEnd('parseBook');
 
   const authorId = await getAuthorId(result.author.name);
 

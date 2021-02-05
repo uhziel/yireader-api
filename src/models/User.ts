@@ -6,6 +6,7 @@ export interface UserInterface extends Document {
   username: string;
   password: string;
   bookSources: Types.Array<BookSourceInterface['id']>;
+  tmpBooks: Types.Array<BookInterface['id']>; //TODO 改个更合适的名字
   books: Types.Array<BookInterface['id']>;
 }
 
@@ -27,6 +28,13 @@ const userSchema = new Schema({
     {
       type: Schema.Types.ObjectId,
       ref: 'BookSource',
+      required: true,
+    },
+  ],
+  tmpBooks: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Book',
       required: true,
     },
   ],

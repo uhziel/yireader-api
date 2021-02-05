@@ -36,6 +36,7 @@ type Mutation {
 
   createAuthor(name: String!): Author
 
+  addBookToBookShelf(id: ID!): Boolean
   createBook(info: BookInfo!): Book
   moveUpBook(id: ID!): Boolean
   moveDownBook(id: ID!): Boolean
@@ -71,6 +72,7 @@ type Author {
 
 type Book {
   id: ID
+  inBookshelf: Boolean
   name: String!
   author: Author!
   coverUrl: String

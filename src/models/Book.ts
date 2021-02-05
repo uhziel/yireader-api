@@ -14,6 +14,7 @@ interface ChapterEntry {
 }
 
 export interface BookInterface extends Document {
+  inBookshelf: boolean;
   user: UserInterface['_id'];
   lastAccessTime: Date;
   name: string;
