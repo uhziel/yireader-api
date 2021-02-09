@@ -41,8 +41,6 @@ type Mutation {
   moveUpBook(id: ID!): Boolean
   moveDownBook(id: ID!): Boolean
   deleteBook(id: ID!): Boolean
-
-  createBookChapter(name: String!, url: String!): BookChapter
 }
 
 """表示一个书源"""
@@ -80,8 +78,9 @@ type Book {
   lastChapter: String
   status: String
   summary: String
+  reverseOrder: Boolean
   bookSource: ID
-  toc: [ChapterEntry!]!
+  spine: [ChapterEntry!]!
 }
 
 type ChapterEntry {
@@ -91,9 +90,11 @@ type ChapterEntry {
 }
 
 type BookChapter {
-  id: ID
+  index: Int
   name: String!
   data: String
+  prev: BookChapter
+  next: BookChapter
 }
 
 type SearchResult {
@@ -110,18 +111,16 @@ input AuthorInput {
 }
 
 input BookInfo {
-  name: String!
-  author: AuthorInput!
-  summary: String!
-  coverUrl: String!
-  url: String!
-  bookSourceId: ID!
+  name: String
+  author: AuthorInput
+  summary: String
+  coverUrl: String
+  url: String
+  bookSourceId: ID
   bookId: ID
 }
 
 input BookChapterInfo {
-  name: String
-  url: String
-  bookSourceId: ID!
-  bookChapterId: ID
+  bookId: ID!
+  bookChapterIndex: Int
 }

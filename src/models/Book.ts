@@ -7,6 +7,7 @@ import {BookSourceInterface} from './BookSource';
 import {BookFileInterface} from './BookFile';
 
 interface ChapterEntry {
+  _id: string;
   name: string;
   url: string;
   chapter?: BookChapterInterface['_id'];
@@ -28,8 +29,9 @@ export interface BookInterface extends Document {
   lastUpdateTime: string;
   lastFetchTime: Date;
   catalogUrl: string;
-  toc: ChapterEntry[];
-  bookSource: BookSourceInterface;
+  spine: Array<ChapterEntry>;
+  reverseOrder: boolean;
+  bookSource: BookSourceInterface['_id'];
   bookFile: BookFileInterface;
 }
 
@@ -83,7 +85,11 @@ const bookSchema = new Schema({
     default: 0,
   },
   catalogUrl: String,
-  toc: [chapterEntrySchema!]!,
+  spine: [chapterEntrySchema!]!,
+  reverseOrder: {
+    type: Boolean,
+    default: false,
+  },
   bookSource: {
     type: Schema.Types.ObjectId,
     ref: 'BookSource',

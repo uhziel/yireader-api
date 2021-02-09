@@ -26,11 +26,7 @@ import {
   moveUpBook,
   moveDownBook,
 } from '../resolvers/Book';
-import {
-  bookChapter,
-  createBookChapter,
-  createBookChapters,
-} from '../resolvers/BookChapter';
+import {bookChapter} from '../resolvers/BookChapter';
 
 import {search} from '../resolvers/Search';
 import {version} from '../resolvers/Version';
@@ -63,8 +59,6 @@ const root = {
   moveDownBook,
 
   bookChapter,
-  createBookChapter,
-  createBookChapters,
 
   search,
   version,

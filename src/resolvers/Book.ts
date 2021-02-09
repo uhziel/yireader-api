@@ -128,12 +128,13 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string) {
     url: bookInfo.url,
     lastUpdateTime: result.update,
     catalogUrl: result.catalog,
-    toc: [],
+    spine: [],
     bookSource: bookInfo.bookSourceId,
   });
-  const bookChapters = await createBookChapters(result.toc);
+  const bookChapters = await createBookChapters(result.spine);
   for (const chapter of bookChapters) {
-    newBook.toc.push({
+    newBook.spine.push({
+      _id: chapter.id,
       name: chapter.name,
       url: chapter.url,
       chapter: chapter.id,
@@ -240,12 +241,13 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
     url: args.info.url,
     lastUpdateTime: result.update,
     catalogUrl: result.catalog,
-    toc: [],
+    spine: [],
     bookSource: args.info.bookSourceId,
   });
-  const bookChapters = await createBookChapters(result.toc);
+  const bookChapters = await createBookChapters(result.spine);
   for (const chapter of bookChapters) {
-    book.toc.push({
+    book.spine.push({
+      _id: '',
       name: chapter.name,
       url: chapter.url,
       chapter: chapter.id,

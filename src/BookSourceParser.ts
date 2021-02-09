@@ -483,7 +483,7 @@ export interface BookResult {
   summary: string;
   update: string;
   bookSource: string;
-  toc: CatalogEntry[];
+  spine: CatalogEntry[];
 }
 export async function parseBook(
   bookSource: BookSource,
@@ -501,7 +501,7 @@ export async function parseBook(
     summary: '',
     update: '',
     bookSource: '',
-    toc: [],
+    spine: [],
   };
 
   const bookDetail = await parseDetail(bookSource, reqData);
@@ -515,7 +515,7 @@ export async function parseBook(
   bookResult.update = bookDetail.update;
   let bookCatalog = await parseCatalog(bookSource, bookDetail);
   bookCatalog = bookCatalog.filter(entry => entry.url.length > 0);
-  bookResult.toc = bookCatalog;
+  bookResult.spine = bookCatalog;
 
   return bookResult;
 }
