@@ -12,7 +12,7 @@ interface BookChapterInput {
   info: BookChapterInfo;
 }
 
-interface BookChapterOutput {
+export interface BookChapterOutput {
   index: number;
   name: string;
   data?: string;
@@ -34,11 +34,6 @@ async function bookChapterFromDb(info: BookChapterInfo, userId: string) {
     throw new Error('没找到该章节。');
   }
 
-  const bookSource = await getBookSource(book.bookSource);
-  if (!bookSource) {
-    throw new Error('通过书源id解析章节失败。');
-  }
-
   const chapter = await BookChapter.findById(chapterEntry._id);
   if (!chapter) {
     return null;
@@ -47,12 +42,20 @@ async function bookChapterFromDb(info: BookChapterInfo, userId: string) {
   if (!chapter.data) {
     chapter.firstAccessTime = new Date();
 
+    const bookSource = await getBookSource(book.bookSource);
+    if (!bookSource) {
+      throw new Error('通过书源id解析章节失败。');
+    }
+
     const reqData: ReqDataChapter = {
       url: chapter.url,
     };
     chapter.data = (await parseChapter(bookSource, reqData)).content;
     await chapter.save();
   }
+
+  book.readingChapterIndex = info.bookChapterIndex;
+  await book.save();
 
   const output: BookChapterOutput = {
     index: info.bookChapterIndex,

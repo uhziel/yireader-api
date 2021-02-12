@@ -5,8 +5,9 @@ import {AuthorInterface} from './Author';
 import {BookChapterInterface} from './BookChapter';
 import {BookSourceInterface} from './BookSource';
 import {BookFileInterface} from './BookFile';
+import {BookChapterOutput} from '../resolvers/BookChapter';
 
-interface ChapterEntry {
+export interface ChapterEntry {
   _id: string;
   name: string;
   url: string;
@@ -29,6 +30,8 @@ export interface BookInterface extends Document {
   lastUpdateTime: string;
   lastFetchTime: Date;
   catalogUrl: string;
+  readingChapterIndex: number;
+  readingChapter?: BookChapterOutput;
   spine: Array<ChapterEntry>;
   reverseOrder: boolean;
   bookSource: BookSourceInterface['_id'];
@@ -85,7 +88,11 @@ const bookSchema = new Schema({
     default: 0,
   },
   catalogUrl: String,
-  spine: [chapterEntrySchema!]!,
+  readingChapterIndex: {
+    type: Number,
+    default: -1,
+  },
+  spine: [chapterEntrySchema],
   reverseOrder: {
     type: Boolean,
     default: false,

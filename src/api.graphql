@@ -80,6 +80,7 @@ type Book {
   summary: String
   reverseOrder: Boolean
   bookSource: ID
+  readingChapter: BookChapter
   spine: [ChapterEntry!]!
 }
 

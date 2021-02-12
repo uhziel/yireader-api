@@ -1,4 +1,4 @@
-import Book from '../models/Book';
+import Book, {ChapterEntry} from '../models/Book';
 import {getBookSource} from '../BookSourceMgr';
 import {parseBook, ReqDataDetail} from '../BookSourceParser';
 import {getAuthorId} from '../resolvers/Author';
@@ -43,6 +43,15 @@ export const books = async (_: unknown, req: Request) => {
     .execPopulate();
   for (const book of user.books) {
     book.inBookshelf = true;
+    if (book.readingChapterIndex > -1) {
+      const chapter: ChapterEntry = book.spine[book.readingChapterIndex];
+      if (chapter) {
+        book.readingChapter = {
+          index: book.readingChapterIndex,
+          name: chapter.name,
+        };
+      }
+    }
   }
   return user.books;
 };
@@ -54,6 +63,15 @@ async function bookFromDb(bookInfo: BookInfo, userId: string) {
   }
   await book.populate('author').execPopulate();
   book.inBookshelf = true;
+  if (book.readingChapterIndex > -1) {
+    const chapter: ChapterEntry = book.spine[book.readingChapterIndex];
+    if (chapter) {
+      book.readingChapter = {
+        index: book.readingChapterIndex,
+        name: chapter.name,
+      };
+    }
+  }
   return book;
 }
 
