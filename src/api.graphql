@@ -38,9 +38,10 @@ type Mutation {
 
   addBookToBookShelf(id: ID!): Boolean
   createBook(info: BookInfo!): Book
+  deleteBook(id: ID!): Boolean
   moveUpBook(id: ID!): Boolean
   moveDownBook(id: ID!): Boolean
-  deleteBook(id: ID!): Boolean
+  reverseOrderBook(id: ID!, reverse: Boolean!): Boolean
 }
 
 """表示一个书源"""

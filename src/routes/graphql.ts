@@ -25,6 +25,7 @@ import {
   deleteBook,
   moveUpBook,
   moveDownBook,
+  reverseOrderBook,
 } from '../resolvers/Book';
 import {bookChapter} from '../resolvers/BookChapter';
 
@@ -57,6 +58,7 @@ const root = {
   deleteBook,
   moveUpBook,
   moveDownBook,
+  reverseOrderBook,
 
   bookChapter,
 

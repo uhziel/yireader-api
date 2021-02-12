@@ -348,3 +348,33 @@ export const moveDownBook = async (args: MoveDownBookInput, req: Request) => {
 
   return true;
 };
+
+interface ReverseOrderBookInput {
+  id: string;
+  reverse: boolean;
+}
+
+export const reverseOrderBook = async (
+  args: ReverseOrderBookInput,
+  req: Request
+) => {
+  const user = await User.findById(req.user?.id, 'books');
+  if (!user) {
+    throw new Error('登录信息不对，无法修改章节排列顺序');
+  }
+
+  const pos = user.books.indexOf(args.id);
+  if (pos === -1) {
+    throw new Error('无法修改章节排列顺序');
+  }
+  const book = await Book.findById(args.id, 'reverseOrder');
+  if (!book) {
+    throw new Error('没找到该书，无法修改章节排列顺序');
+  }
+  if (book.reverseOrder !== args.reverse) {
+    book.reverseOrder = args.reverse;
+    await book.save();
+  }
+
+  return true;
+};
