@@ -18,7 +18,7 @@ interface DeleteBookSourceInput {
   id: string;
 }
 
-export const bookSourcesByid = async (id: string) => {
+export const bookSourcesById = async (id: string) => {
   return await BookSource.findById(id);
 };
 

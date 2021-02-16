@@ -265,7 +265,7 @@ export async function parseDetail(
 }
 
 ////////////////////////////////
-interface ReqDataCatalog {
+export interface ReqDataCatalog {
   author: string;
   catalog: string;
   cover: string;

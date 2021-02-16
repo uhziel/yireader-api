@@ -1,6 +1,6 @@
 import {readFileSync} from 'fs';
 import BookSource from './models/BookSource';
-import {bookSourcesByid, bookSourcesByUserId} from './resolvers/BookSource';
+import {bookSourcesById, bookSourcesByUserId} from './resolvers/BookSource';
 
 const bookSourceFiles = [
   'jueshitangmen.info.json',
@@ -155,7 +155,7 @@ export async function getEnabledBookSources(userId: string) {
 }
 
 export async function getBookSource(bookSourceId: string) {
-  const bookSourceDoc = await bookSourcesByid(bookSourceId);
+  const bookSourceDoc = await bookSourcesById(bookSourceId);
   if (!bookSourceDoc) {
     return null;
   }

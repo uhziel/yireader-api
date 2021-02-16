@@ -1,4 +1,4 @@
-import Book, {ChapterEntry} from '../models/Book';
+import Book, {BookInterface, ChapterEntry} from '../models/Book';
 import {getBookSource} from '../BookSourceMgr';
 import {parseBook, ReqDataDetail} from '../BookSourceParser';
 import {getAuthorId} from '../resolvers/Author';
@@ -6,6 +6,7 @@ import {createBookChapters} from '../resolvers/BookChapter';
 import {createWebResource} from '../resolvers/WebResource';
 import {Request} from 'express';
 import User from '../models/User';
+import fetchMgr from '../BookFetchMgr';
 
 interface CreateBookInput {
   info: BookInfo;
@@ -28,6 +29,8 @@ interface BookByInfoInput {
   info: BookInfo;
 }
 
+const FETCH_INTERVAL = 600000; // 拉取书数据的最小间隔，单位：毫秒
+
 export const books = async (_: unknown, req: Request) => {
   const user = await User.findById(req.user.id, 'books');
   if (!user) {
@@ -41,7 +44,8 @@ export const books = async (_: unknown, req: Request) => {
       },
     })
     .execPopulate();
-  for (const book of user.books) {
+  const now = Date.now();
+  for (const book of user.books as BookInterface[]) {
     book.inBookshelf = true;
     if (book.readingChapterIndex > -1) {
       const chapter: ChapterEntry = book.spine[book.readingChapterIndex];
@@ -50,6 +54,12 @@ export const books = async (_: unknown, req: Request) => {
           index: book.readingChapterIndex,
           name: chapter.name,
         };
+      }
+    }
+    const timeDiff = now - book.lastFetchTime.valueOf();
+    if (timeDiff > FETCH_INTERVAL) {
+      if (!fetchMgr.isFetching(book.id)) {
+        fetchMgr.add(book);
       }
     }
   }
@@ -71,6 +81,10 @@ async function bookFromDb(bookInfo: BookInfo, userId: string) {
         name: chapter.name,
       };
     }
+  }
+  if (book.contentChanged) {
+    book.contentChanged = false;
+    await book.save();
   }
   return book;
 }

@@ -3,6 +3,7 @@ import {getBookSource} from '../BookSourceMgr';
 import {parseChapter, ReqDataChapter} from '../BookSourceParser';
 import {Request} from 'express';
 import Book from '../models/Book';
+import fetchMgr from '../BookFetchMgr';
 
 interface BookChapterInfo {
   bookId: string;
@@ -20,10 +21,12 @@ export interface BookChapterOutput {
   next?: BookChapterOutput;
 }
 
+const FETCH_INTERVAL = 600000; // 拉取书数据的最小间隔，单位：毫秒
+
 async function bookChapterFromDb(info: BookChapterInfo, userId: string) {
   const book = await Book.findOne(
     {_id: info.bookId, user: userId},
-    'spine bookSource'
+    'spine bookSource catalogUrl contentChanged lastFetchTime'
   );
   if (!book) {
     throw new Error('通过书的id查找书失败。');
@@ -55,6 +58,9 @@ async function bookChapterFromDb(info: BookChapterInfo, userId: string) {
   }
 
   book.readingChapterIndex = info.bookChapterIndex;
+  if (book.contentChanged) {
+    book.contentChanged = false;
+  }
   await book.save();
 
   const output: BookChapterOutput = {
@@ -68,6 +74,15 @@ async function bookChapterFromDb(info: BookChapterInfo, userId: string) {
       index: info.bookChapterIndex - 1,
       name: book.spine[info.bookChapterIndex - 1].name,
     };
+    const now = Date.now();
+    if (book.spine.length - info.bookChapterIndex < 10) {
+      const timeDiff = now - book.lastFetchTime.valueOf();
+      if (timeDiff > FETCH_INTERVAL) {
+        if (!fetchMgr.isFetching(book.id)) {
+          fetchMgr.add(book);
+        }
+      }
+    }
   }
   if (info.bookChapterIndex < book.spine.length - 1) {
     output.next = {

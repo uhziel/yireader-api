@@ -34,6 +34,7 @@ export interface BookInterface extends Document {
   readingChapter?: BookChapterOutput;
   spine: Array<ChapterEntry>;
   reverseOrder: boolean;
+  contentChanged: boolean;
   bookSource: BookSourceInterface['_id'];
   bookFile: BookFileInterface;
 }
@@ -85,7 +86,7 @@ const bookSchema = new Schema({
   lastUpdateTime: String,
   lastFetchTime: {
     type: Date,
-    default: 0,
+    default: Date.now,
   },
   catalogUrl: String,
   readingChapterIndex: {
@@ -94,6 +95,10 @@ const bookSchema = new Schema({
   },
   spine: [chapterEntrySchema],
   reverseOrder: {
+    type: Boolean,
+    default: false,
+  },
+  contentChanged: {
     type: Boolean,
     default: false,
   },
