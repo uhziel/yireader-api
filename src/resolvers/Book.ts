@@ -7,6 +7,7 @@ import {createWebResource} from '../resolvers/WebResource';
 import {Request} from 'express';
 import User from '../models/User';
 import fetchMgr from '../BookFetchMgr';
+import BookChapter from '../models/BookChapter';
 
 interface CreateBookInput {
   info: BookInfo;
@@ -311,6 +312,15 @@ export const deleteBook = async (args: DeleteBookInput, req: Request) => {
   if (pos === -1) {
     throw new Error('删除书失败，玩家没有该书');
   }
+
+  const book = await Book.findById(args.id, 'spine');
+  if (!book) {
+    throw new Error('删除书失败，没找到这本书');
+  }
+
+  const deletedChapterIds = book.spine.map(chapter => chapter._id);
+
+  await BookChapter.deleteMany({_id: {$in: deletedChapterIds}});
 
   user.books.pull(args.id);
   await user.save();
