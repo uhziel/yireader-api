@@ -8,6 +8,8 @@ import {Request} from 'express';
 import User from '../models/User';
 import fetchMgr from '../BookFetchMgr';
 import BookChapter from '../models/BookChapter';
+import {Types} from 'mongoose';
+import GCMgr from '../BookGCMgr';
 
 interface CreateBookInput {
   info: BookInfo;
@@ -30,10 +32,11 @@ interface BookByInfoInput {
   info: BookInfo;
 }
 
-const FETCH_INTERVAL = 600000; // 拉取书数据的最小间隔，单位：毫秒
+const FETCH_INTERVAL = 10 * 60 * 1000; // 拉取书数据的最小间隔，单位：毫秒
+const TMP_BOOK_LIFETIME = 24 * 60 * 60 * 1000; // 临时书的生存时间。单位：毫秒
 
 export const books = async (_: unknown, req: Request) => {
-  const user = await User.findById(req.user.id, 'books');
+  const user = await User.findById(req.user.id, 'books tmpBooks');
   if (!user) {
     throw new Error('玩家信息不对，无法拉取其书柜信息');
   }
@@ -62,6 +65,14 @@ export const books = async (_: unknown, req: Request) => {
       if (!fetchMgr.isFetching(book.id)) {
         fetchMgr.add(book);
       }
+    }
+  }
+
+  if (user.tmpBooks.length > 0) {
+    const bookId: Types.ObjectId = user.tmpBooks[0];
+    const timeDiff = now - bookId.getTimestamp().valueOf();
+    if (timeDiff > TMP_BOOK_LIFETIME) {
+      GCMgr.add(req.user.id, bookId.toHexString());
     }
   }
   return user.books;
