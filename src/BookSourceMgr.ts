@@ -119,10 +119,6 @@ class BookSourceMgr {
     return null;
   }
 
-  getAllBookSources(): BookSource[] {
-    return this.bookSources;
-  }
-
   getEnabledBookSources(enabledUrls: string[] | null): BookSource[] {
     if (!enabledUrls) {
       return this.bookSources.slice(0, 2);

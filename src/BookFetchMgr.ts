@@ -40,7 +40,6 @@ class BookFetchMgr {
         if (!book.contentChanged) {
           book.contentChanged = true;
         }
-        book.lastFetchTime = new Date();
 
         const bookChapters = await createBookChapters(
           bookCatalog.slice(book.spine.length, bookCatalog.length)

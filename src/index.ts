@@ -28,7 +28,6 @@ import searchRouter from './routes/search';
 import detailRouter from './routes/detail';
 import catalogRouter from './routes/catalog';
 import chapterRouter from './routes/chapter';
-import bookSourcesRouter from './routes/bookSources';
 import graphqlRouter from './routes/graphql';
 
 import usersRouter from './routes/users';
@@ -44,7 +43,6 @@ app.use('/search', searchRouter);
 app.use('/detail', detailRouter);
 app.use('/catalog', catalogRouter);
 app.use('/chapter', chapterRouter);
-app.use('/booksources', bookSourcesRouter);
 app.use('/users', usersRouter);
 app.use('/graphql', jwt, graphqlRouter);
 
