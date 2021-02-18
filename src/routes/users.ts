@@ -38,8 +38,12 @@ async function handleRegister(req: Request, res: Response) {
     registerRes.errors.push('密码不匹配。');
   }
 
-  if (password && password.length < 6) {
+  if (password.length < 6) {
     registerRes.errors.push('密码至少需要6位。');
+  }
+
+  if (username === 'admin') {
+    registerRes.errors.push('admin为保留用户名，不允许用户注册。');
   }
 
   if (registerRes.errors.length > 0) {
