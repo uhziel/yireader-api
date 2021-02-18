@@ -40,15 +40,13 @@ app.disable('x-powered-by');
 app.use(express.json());
 app.use(express.static('dist'));
 
-app.use(jwt);
-
 app.use('/search', searchRouter);
 app.use('/detail', detailRouter);
 app.use('/catalog', catalogRouter);
 app.use('/chapter', chapterRouter);
 app.use('/booksources', bookSourcesRouter);
 app.use('/users', usersRouter);
-app.use('/graphql', graphqlRouter);
+app.use('/graphql', jwt, graphqlRouter);
 
 app.listen(3001, () => {
   console.log('Listen on port 3001!');
