@@ -5,6 +5,7 @@ import {hashSync, compareSync} from 'bcrypt';
 
 const SALT_ROUNDS = 8;
 const SECRET_KEY = process.env.SECRET_KEY || 'yireader';
+const TOKEN_LIFETIME = '1y';
 
 const router = Router();
 
@@ -73,7 +74,7 @@ async function handleRegister(req: Request, res: Response) {
     {id: newUser.id, username: username},
     SECRET_KEY,
     {
-      expiresIn: '24h',
+      expiresIn: TOKEN_LIFETIME,
     }
   );
   registerRes.username = username;
@@ -109,7 +110,7 @@ async function handleLogin(req: Request, res: Response) {
 
   loginRes.ret = 0;
   loginRes.token = signJWT({id: user.id, username: username}, SECRET_KEY, {
-    expiresIn: '24h',
+    expiresIn: TOKEN_LIFETIME,
   });
   loginRes.username = username;
   res.send(loginRes);
