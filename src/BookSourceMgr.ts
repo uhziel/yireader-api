@@ -1,4 +1,6 @@
 import {readFileSync} from 'fs';
+import BookSource from './models/BookSource';
+import {bookSourcesById, bookSourcesByUserId} from './resolvers/BookSource';
 
 const bookSourceFiles = [
   'jueshitangmen.info.json',
@@ -62,6 +64,7 @@ interface BookSourceChapter {
 
 // 书源
 export interface BookSource {
+  id?: string;
   name: string; // 名字 重要！源网站名字，必须标准，禁止使用前缀
   url: string; // 网址 重要！源网站链接 相同的url会被识别为同一个书源。url中请勿填写http或https字样https://www.zongheng.com应写做www.zongheng.com
   version: number; // 版本 重要！默认100（1.0）当内容变化时递增，如101（1.1）
@@ -116,10 +119,6 @@ class BookSourceMgr {
     return null;
   }
 
-  getAllBookSources(): BookSource[] {
-    return this.bookSources;
-  }
-
   getEnabledBookSources(enabledUrls: string[] | null): BookSource[] {
     if (!enabledUrls) {
       return this.bookSources.slice(0, 2);
@@ -136,5 +135,30 @@ class BookSourceMgr {
 
 const mgr = new BookSourceMgr();
 mgr.init();
+
+export async function getEnabledBookSources(userId: string) {
+  const bookSourceDocs = await bookSourcesByUserId(userId, true);
+
+  const bookSources: BookSource[] = [];
+  for (const bookSourceDoc of bookSourceDocs) {
+    const bookSource = JSON.parse(bookSourceDoc.data);
+    bookSource.id = bookSourceDoc.id;
+    if (bookSource) {
+      bookSources.push(bookSource);
+    }
+  }
+  return bookSources;
+}
+
+export async function getBookSource(bookSourceId: string) {
+  const bookSourceDoc = await bookSourcesById(bookSourceId);
+  if (!bookSourceDoc) {
+    return null;
+  }
+
+  const bookSource: BookSource = JSON.parse(bookSourceDoc.data);
+  bookSource.id = bookSourceDoc.id;
+  return bookSource;
+}
 
 export default mgr;

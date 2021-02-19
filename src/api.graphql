@@ -1,0 +1,129 @@
+# 尾部不需要使用;
+# Scalar types 是 Int、Float、String、Boolean、ID，没有 Buffer、Date
+
+type Query {
+  version: String!
+
+  """查询所有的书源"""
+  bookSources: [BookSource!]!
+  
+  webResources: [WebResource!]!
+  webResource(url: String!): WebResource
+
+  authors: [Author!]!
+
+  books: [Book!]!
+  book(info: BookInfo!): Book
+
+  bookChapter(info: BookChapterInfo!): BookChapter
+
+  search(name: String!): [SearchResult!]!
+}
+
+type Mutation {
+  """创建书源"""
+  createBookSource(downloadUrl: String!): BookSource
+  """向上移动书源"""
+  moveUpBookSource(id: ID!): Boolean
+  """向下移动书源"""
+  moveDownBookSource(id: ID!): Boolean
+  """启用书源"""
+  enableSearchBookSource(id: ID!, value: Boolean): Boolean
+  """删除书源"""
+  deleteBookSource(id: ID!): Boolean
+
+  createWebResource(url: String!): WebResource
+
+  createAuthor(name: String!): Author
+
+  addBookToBookShelf(id: ID!): Boolean
+  createBook(info: BookInfo!): Book
+  deleteBook(id: ID!): Boolean
+  moveUpBook(id: ID!): Boolean
+  moveDownBook(id: ID!): Boolean
+  reverseOrderBook(id: ID!, reverse: Boolean!): Boolean
+}
+
+"""表示一个书源"""
+type BookSource {
+  id: ID!
+  """书源名"""
+  name: String!
+  """书源所在网站"""
+  url: String!
+  """版本号"""
+  version: Int!
+  """启用搜索"""
+  enableSearch: Boolean!
+}
+
+"""网络资源"""
+type WebResource {
+  id: ID!
+  mediaType: String!
+  url: String!
+}
+
+type Author {
+  id: ID!
+  name: String!
+}
+
+type Book {
+  id: ID
+  inBookshelf: Boolean
+  name: String!
+  author: Author!
+  coverUrl: String
+  url: String!
+  lastChapter: String
+  status: String
+  summary: String
+  reverseOrder: Boolean
+  contentChanged: Boolean
+  bookSource: ID
+  readingChapter: BookChapter
+  spine: [ChapterEntry!]!
+}
+
+type ChapterEntry {
+  name: String!
+  url: String!
+  chapter: ID
+}
+
+type BookChapter {
+  index: Int
+  name: String!
+  data: String
+  prev: BookChapter
+  next: BookChapter
+}
+
+type SearchResult {
+  name: String!
+  author: Author!
+  summary: String!
+  coverUrl: String!
+  url: String!
+  bookSourceId: ID!
+}
+
+input AuthorInput {
+  name: String!
+}
+
+input BookInfo {
+  name: String
+  author: AuthorInput
+  summary: String
+  coverUrl: String
+  url: String
+  bookSourceId: ID
+  bookId: ID
+}
+
+input BookChapterInfo {
+  bookId: ID!
+  bookChapterIndex: Int
+}

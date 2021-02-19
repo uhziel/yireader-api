@@ -1,12 +1,13 @@
-import * as express from 'express';
+import {Router, Request, Response} from 'express';
 import User from '../models/User';
 import {sign as signJWT} from 'jsonwebtoken';
 import {hashSync, compareSync} from 'bcrypt';
 
 const SALT_ROUNDS = 8;
 const SECRET_KEY = process.env.SECRET_KEY || 'yireader';
+const TOKEN_LIFETIME = '1y';
 
-const router = express.Router();
+const router = Router();
 
 interface RegisterRes {
   ret: number;
@@ -22,7 +23,7 @@ interface LoginRes {
   username: string;
 }
 
-router.post('/register', (req, res) => {
+async function handleRegister(req: Request, res: Response) {
   const {username, password, password_confirmation} = req.body;
   const registerRes: RegisterRes = {
     ret: 1,
@@ -38,8 +39,12 @@ router.post('/register', (req, res) => {
     registerRes.errors.push('密码不匹配。');
   }
 
-  if (password && password.length < 6) {
+  if (password.length < 6) {
     registerRes.errors.push('密码至少需要6位。');
+  }
+
+  if (username === 'admin') {
+    registerRes.errors.push('admin为保留用户名，不允许用户注册。');
   }
 
   if (registerRes.errors.length > 0) {
@@ -49,43 +54,38 @@ router.post('/register', (req, res) => {
 
   const passwordAfterHash = hashSync(password, SALT_ROUNDS);
 
-  User.findOne({username: username}).exec((err, user) => {
-    if (user) {
-      registerRes.errors.push('该用户名已经被注册。');
-      res.send(registerRes);
-      return;
-    }
+  const isExist = await User.exists({username: username});
 
-    const newUser = new User({
-      username: username,
-      password: passwordAfterHash,
-    });
+  if (isExist) {
+    registerRes.errors.push('该用户名已经被注册。');
+    res.send(registerRes);
+    return;
+  }
 
-    newUser
-      .save()
-      .then(user => {
-        console.log(user);
-        registerRes.ret = 0;
-        registerRes.token = signJWT(
-          {id: user.id, username: username},
-          SECRET_KEY,
-          {
-            expiresIn: '24h',
-          }
-        );
-        registerRes.username = username;
-        res.send(registerRes);
-      })
-      .catch(e => {
-        console.error(e);
-        registerRes.errors.push('内部错误。');
-        res.send(registerRes);
-        return;
-      });
+  const newUser = new User({
+    username: username,
+    password: passwordAfterHash,
   });
+
+  await newUser.save();
+
+  registerRes.ret = 0;
+  registerRes.token = signJWT(
+    {id: newUser.id, username: username},
+    SECRET_KEY,
+    {
+      expiresIn: TOKEN_LIFETIME,
+    }
+  );
+  registerRes.username = username;
+  res.send(registerRes);
+}
+
+router.post('/register', async (req, res, next) => {
+  handleRegister(req, res).catch(e => next(e));
 });
 
-router.post('/login', (req, res) => {
+async function handleLogin(req: Request, res: Response) {
   const {username, password} = req.body;
   const loginRes: LoginRes = {
     ret: 1,
@@ -93,31 +93,31 @@ router.post('/login', (req, res) => {
     token: '',
     username: '',
   };
-  User.findOne({username: username}).exec((err, user) => {
-    if (err) {
-      loginRes.error = '内部错误。';
-      res.send(loginRes);
-      return;
-    }
-    if (!user) {
-      loginRes.error = '用户名或密码错误，请重试。';
-      res.send(loginRes);
-      return;
-    }
 
-    if (!compareSync(password, user.password)) {
-      loginRes.error = '用户名或密码错误，请重试。';
-      res.send(loginRes);
-      return;
-    }
+  const user = await User.findOne({username: username}, 'username password');
 
-    loginRes.ret = 0;
-    loginRes.token = signJWT({id: user.id, username: username}, SECRET_KEY, {
-      expiresIn: '24h',
-    });
-    loginRes.username = username;
+  if (!user) {
+    loginRes.error = '用户名或密码错误，请重试。';
     res.send(loginRes);
+    return;
+  }
+
+  if (!compareSync(password, user.password)) {
+    loginRes.error = '用户名或密码错误，请重试。';
+    res.send(loginRes);
+    return;
+  }
+
+  loginRes.ret = 0;
+  loginRes.token = signJWT({id: user.id, username: username}, SECRET_KEY, {
+    expiresIn: TOKEN_LIFETIME,
   });
+  loginRes.username = username;
+  res.send(loginRes);
+}
+
+router.post('/login', (req, res, next) => {
+  handleLogin(req, res).catch(e => next(e));
 });
 
 interface ChangePasswordRes {
@@ -126,59 +126,49 @@ interface ChangePasswordRes {
   success: string;
 }
 
-router.post('/changepassword', (req, res) => {
+async function handleChangePassword(req: Request, res: Response) {
   const {username, password, newPassword, newPasswordConfirmation} = req.body;
   const result: ChangePasswordRes = {
     ret: 1,
     error: '',
     success: '',
   };
-  User.findOne({username: username}).exec((err, user) => {
-    if (err) {
-      result.error = '内部错误。';
-      res.send(result);
-      return;
-    }
-    if (!user) {
-      result.error = '内部错误。';
-      res.send(result);
-      return;
-    }
+  const user = await User.findOne({username: username}, 'username password');
 
-    if (newPassword && newPassword.length < 6) {
-      result.error = '新密码至少需要6位。';
-      res.send(result);
-      return;
-    }
+  if (!user) {
+    result.error = '内部错误。';
+    res.send(result);
+    return;
+  }
 
-    if (newPassword !== newPasswordConfirmation) {
-      result.error = '新密码不匹配。';
-      res.send(result);
-      return;
-    }
+  if (newPassword && newPassword.length < 6) {
+    result.error = '新密码至少需要6位。';
+    res.send(result);
+    return;
+  }
 
-    if (!compareSync(password, user.password)) {
-      result.error = '当前密码错误，请重试。';
-      res.send(result);
-      return;
-    }
+  if (newPassword !== newPasswordConfirmation) {
+    result.error = '新密码不匹配。';
+    res.send(result);
+    return;
+  }
 
-    const passwordAfterHash = hashSync(newPassword, SALT_ROUNDS);
-    user.password = passwordAfterHash;
-    user
-      .save()
-      .then(user => {
-        console.log(user);
-        result.ret = 0;
-        result.success = '修改密码成功。';
-        res.send(result);
-      })
-      .catch(e => {
-        console.error(e);
-        result.error = '内部错误。';
-        res.send(result);
-      });
-  });
+  if (!compareSync(password, user.password)) {
+    result.error = '当前密码错误，请重试。';
+    res.send(result);
+    return;
+  }
+
+  const passwordAfterHash = hashSync(newPassword, SALT_ROUNDS);
+  user.password = passwordAfterHash;
+  await user.save();
+  result.ret = 0;
+  result.success = '修改密码成功。';
+  res.send(result);
+}
+
+router.post('/changepassword', (req, res, next) => {
+  handleChangePassword(req, res).catch(e => next(e));
 });
 
 export default router;

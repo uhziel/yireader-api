@@ -1,11 +1,16 @@
-import {Schema, Model, Document, model} from 'mongoose';
+import {Schema, Document, model, Types} from 'mongoose';
+import {BookSourceInterface} from './BookSource';
+import {BookInterface} from './Book';
 
-interface UserInterface extends Document {
+export interface UserInterface extends Document {
   username: string;
   password: string;
+  bookSources: Types.Array<BookSourceInterface['id']>;
+  tmpBooks: Types.Array<BookInterface['id']>; //TODO 改个更合适的名字
+  books: Types.Array<BookInterface['id']>;
 }
 
-const UserSchema = new Schema({
+const userSchema = new Schema({
   username: {
     type: String,
     required: true,
@@ -14,11 +19,32 @@ const UserSchema = new Schema({
     type: String,
     required: true,
   },
+  //TODO 改为 timestamps: true
   createData: {
     type: Date,
     default: Date.now,
   },
+  bookSources: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'BookSource',
+      required: true,
+    },
+  ],
+  tmpBooks: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Book',
+      required: true,
+    },
+  ],
+  books: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Book',
+      required: true,
+    },
+  ],
 });
 
-const User: Model<UserInterface> = model('User', UserSchema);
-export default User;
+export default model<UserInterface>('User', userSchema);

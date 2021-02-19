@@ -79,15 +79,16 @@ axiosWithEncoding.interceptors.response.use(response => {
   return response;
 });
 
-interface ResDataSearchEntry {
+export interface ResDataSearchEntry {
   name: string;
   author: string;
   summary: string;
   cover: string;
   detail: string;
+  bookSourceId?: string;
 }
 
-type ResDataSearch = ResDataSearchEntry[];
+export type ResDataSearch = ResDataSearchEntry[];
 
 interface BsHttpReq {
   reqUrl: string;
@@ -151,7 +152,13 @@ export async function parseSearch(
   }
 
   for (const iterator of contentBlock.query(bookSource.search.list)) {
-    const entry = {name: '', author: '', summary: '', cover: '', detail: ''};
+    const entry: ResDataSearchEntry = {
+      name: '',
+      author: '',
+      summary: '',
+      cover: '',
+      detail: '',
+    };
     entry.name = iterator.value(bookSource.search.name, 'text');
     if (bookSource.search.author) {
       entry.author = iterator.value(bookSource.search.author, 'text');
@@ -168,13 +175,14 @@ export async function parseSearch(
     } else {
       entry.detail = attrDetail;
     }
+    entry.bookSourceId = bookSource.id;
     searchResult.push(entry);
   }
   return searchResult;
 }
 
 ////////////////////////////////
-interface ReqDataDetail {
+export interface ReqDataDetail {
   name?: string;
   author?: string;
   summary?: string;
@@ -257,7 +265,7 @@ export async function parseDetail(
 }
 
 ////////////////////////////////
-interface ReqDataCatalog {
+export interface ReqDataCatalog {
   author: string;
   catalog: string;
   cover: string;
@@ -344,10 +352,10 @@ export async function parseCatalog(
 }
 
 ////////////////////////////////
-interface ReqDataChapter {
-  name: string;
+export interface ReqDataChapter {
+  name?: string;
   url: string;
-  useLevel: boolean;
+  useLevel?: boolean;
 }
 
 export function isReqDataChapter(reqData: unknown): reqData is ReqDataChapter {
@@ -458,4 +466,56 @@ export async function parseChapter(
   }
   chapterResult.content = allP.join('\n');
   return chapterResult;
+}
+
+////////////////////////////////
+
+interface Author {
+  name: string;
+}
+export interface BookResult {
+  author: Author;
+  catalog: string;
+  coverUrl: string;
+  lastChapter: string;
+  name: string;
+  status: string;
+  summary: string;
+  update: string;
+  bookSource: string;
+  spine: CatalogEntry[];
+}
+export async function parseBook(
+  bookSource: BookSource,
+  reqData: ReqDataDetail
+) {
+  const bookResult: BookResult = {
+    author: {
+      name: '',
+    },
+    catalog: '',
+    coverUrl: '',
+    lastChapter: '',
+    name: '',
+    status: '',
+    summary: '',
+    update: '',
+    bookSource: '',
+    spine: [],
+  };
+
+  const bookDetail = await parseDetail(bookSource, reqData);
+  bookResult.author.name = bookDetail.author;
+  bookResult.catalog = bookDetail.catalog;
+  bookResult.coverUrl = bookDetail.cover;
+  bookResult.lastChapter = bookDetail.lastChapter;
+  bookResult.name = bookDetail.name;
+  bookResult.status = bookDetail.status;
+  bookResult.summary = bookDetail.summary;
+  bookResult.update = bookDetail.update;
+  let bookCatalog = await parseCatalog(bookSource, bookDetail);
+  bookCatalog = bookCatalog.filter(entry => entry.url.length > 0);
+  bookResult.spine = bookCatalog;
+
+  return bookResult;
 }
