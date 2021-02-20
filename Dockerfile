@@ -1,15 +1,15 @@
-FROM node:12-alpine as build-stage
+FROM node:14-alpine as build-stage
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 COPY tsconfig.json ./
 COPY src ./src
-RUN npm run compile
+RUN npm run build
 
-FROM node:12-alpine as production-stage
+FROM node:14-alpine as production-stage
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm install --production
+RUN npm ci --production
 COPY assets ./assets
 COPY --from=build-stage /app/build ./build
 EXPOSE 3001
