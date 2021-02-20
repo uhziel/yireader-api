@@ -11,7 +11,10 @@ const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {
   throw new Error('Please config your env MONGODB_URI first.');
 }
-import {connect as connectMongodb} from 'mongoose';
+import {
+  connect as connectMongodb,
+  connection as connectionMonogodb,
+} from 'mongoose';
 connectMongodb(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -52,8 +55,9 @@ const server = app.listen(3001, () => {
 });
 
 process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing yireader server');
+  console.log('SIGTERM signal received: closing the application');
   server.close(() => {
     console.log('yireader server closed');
+    connectionMonogodb.close(() => console.log('Monogodb connection closed'));
   });
 });
