@@ -84,7 +84,7 @@ class BookSourceMgr {
   init() {
     for (const bookSourceFile of bookSourceFiles) {
       const bookSource = JSON.parse(
-        readFileSync('book_sources/' + bookSourceFile, 'utf8')
+        readFileSync('assets/book_sources/' + bookSourceFile, 'utf8')
       );
       if (bookSource) {
         this.bookSources.push(bookSource);

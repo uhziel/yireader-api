@@ -34,7 +34,7 @@ import {version} from '../resolvers/Version';
 
 const router = express.Router();
 
-const scheme = buildSchema(readFileSync('src/api.graphql', 'utf8'));
+const scheme = buildSchema(readFileSync('assets/api.graphql', 'utf8'));
 
 const root = {
   bookSources,
