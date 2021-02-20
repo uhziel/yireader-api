@@ -32,6 +32,7 @@ import detailRouter from './routes/detail';
 import catalogRouter from './routes/catalog';
 import chapterRouter from './routes/chapter';
 import graphqlRouter from './routes/graphql';
+import versionRouter from './routes/version';
 
 import usersRouter from './routes/users';
 
@@ -48,6 +49,7 @@ app.use('/catalog', catalogRouter);
 app.use('/chapter', chapterRouter);
 app.use('/users', usersRouter);
 app.use('/graphql', jwt, graphqlRouter);
+app.use('/version', versionRouter);
 
 console.log(`This process is pid ${process.pid}`);
 const server = app.listen(3001, () => {
