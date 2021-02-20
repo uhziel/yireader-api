@@ -1,10 +1,16 @@
-FROM node:12-alpine
+FROM node:12-alpine as build-stage
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm install
 COPY tsconfig.json ./
-COPY book_sources ./book_sources
 COPY src ./src
-RUN npx tsc
+RUN npm run compile
+
+FROM node:12-alpine as production-stage
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm install --production
+COPY assets ./assets
+COPY --from=build-stage /app/build ./build
 EXPOSE 3001
-CMD ["node", "/app/build/src/index.js"]
+CMD ["node", "--unhandled-rejections=strict", "/app/build/src/index.js"]
