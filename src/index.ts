@@ -46,6 +46,14 @@ app.use('/chapter', chapterRouter);
 app.use('/users', usersRouter);
 app.use('/graphql', jwt, graphqlRouter);
 
-app.listen(3001, () => {
+console.log(`This process is pid ${process.pid}`);
+const server = app.listen(3001, () => {
   console.log('Listen on port 3001!');
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing yireader server');
+  server.close(() => {
+    console.log('yireader server closed');
+  });
 });
