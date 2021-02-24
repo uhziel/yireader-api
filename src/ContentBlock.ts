@@ -226,8 +226,8 @@ class ContentBlockHtml implements ContentBlock {
       if (elem.type === 'text') ret += elem.data;
       else if (elem.type === 'tag' && elem.tagName === 'br') ret += '\n';
       else if (
-        elem.children &&
         elem.type !== 'comment' &&
+        elem.children &&
         elem.tagName !== 'script' &&
         elem.tagName !== 'style'
       ) {
