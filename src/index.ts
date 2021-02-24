@@ -24,7 +24,7 @@ connectMongodb(MONGODB_URI, {
     throw new Error(e);
   });
 
-import * as express from 'express';
+import express from 'express';
 import jwt from './middlewares/jwt';
 
 import searchRouter from './routes/search';

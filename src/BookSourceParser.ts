@@ -6,7 +6,7 @@ import createContentBlock, {
   HeadersExp,
 } from './ContentBlock';
 import * as iconv from 'iconv-lite';
-import * as urlencode from 'urlencode';
+import urlencode from 'urlencode';
 
 interface ContentType {
   type: string;
