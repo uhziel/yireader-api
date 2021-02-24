@@ -29,7 +29,7 @@
     "@types/express": "^4.17.11",
     "@types/jsonpath": "^0.2.0",
     "@types/jsonwebtoken": "^8.5.0",
-    "@types/node": "^13.13.45",
+    "@types/node": "^14.14.31",
     "@types/urlencode": "^1.1.2",
     "gts": "^2.0.2",
     "typescript": "^3.9.9"
