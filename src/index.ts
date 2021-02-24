@@ -40,6 +40,9 @@ const app: express.Application = express();
 
 app.disable('x-powered-by');
 
+import serverTiming from 'server-timing';
+app.use(serverTiming());
+
 app.use(express.json());
 app.use(express.static('dist'));
 
