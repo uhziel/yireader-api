@@ -1,6 +1,6 @@
 import {getEnabledBookSources} from '../BookSourceMgr';
 import {parseSearch} from '../BookSourceParser';
-import {Request} from 'express';
+import {GraphQLContext} from '.';
 
 interface SearchInput {
   name: string;
@@ -19,12 +19,12 @@ interface SearchResult {
   bookSourceId?: string;
 }
 
-export const search = async (args: SearchInput, req: Request) => {
-  if (!req.user) {
+export const search = async (args: SearchInput, context: GraphQLContext) => {
+  if (!context.req.user) {
     return [];
   }
   const searchResults: SearchResult[] = [];
-  const bookSources = await getEnabledBookSources(req.user?.id);
+  const bookSources = await getEnabledBookSources(context.req.user?.id);
   const promises = bookSources.map(bookSource =>
     parseSearch(bookSource, args.name)
   );

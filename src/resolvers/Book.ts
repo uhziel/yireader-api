@@ -4,12 +4,12 @@ import {parseBook, ReqDataDetail} from '../BookSourceParser';
 import {getAuthorId} from '../resolvers/Author';
 import {createBookChapters} from '../resolvers/BookChapter';
 import {createWebResource} from '../resolvers/WebResource';
-import {Request} from 'express';
 import User from '../models/User';
 import fetchMgr from '../BookFetchMgr';
 import BookChapter from '../models/BookChapter';
 import {Types} from 'mongoose';
 import GCMgr from '../BookGCMgr';
+import {GraphQLContext} from '.';
 
 interface CreateBookInput {
   info: BookInfo;
@@ -35,8 +35,8 @@ interface BookByInfoInput {
 const FETCH_INTERVAL = 10 * 60 * 1000; // 拉取书数据的最小间隔，单位：毫秒
 const TMP_BOOK_LIFETIME = 24 * 60 * 60 * 1000; // 临时书的生存时间。单位：毫秒
 
-export const books = async (_: unknown, req: Request) => {
-  const user = await User.findById(req.user.id, 'books tmpBooks');
+export const books = async (_: unknown, context: GraphQLContext) => {
+  const user = await User.findById(context.req.user.id, 'books tmpBooks');
   if (!user) {
     throw new Error('玩家信息不对，无法拉取其书柜信息');
   }
@@ -72,7 +72,7 @@ export const books = async (_: unknown, req: Request) => {
     const bookId: Types.ObjectId = user.tmpBooks[0];
     const timeDiff = now - bookId.getTimestamp().valueOf();
     if (timeDiff > TMP_BOOK_LIFETIME) {
-      GCMgr.add(req.user.id, bookId.toHexString());
+      GCMgr.add(context.req.user.id, bookId.toHexString());
     }
   }
   return user.books;
@@ -197,12 +197,12 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string) {
   return newBook;
 }
 
-export const book = async (args: BookByInfoInput, req: Request) => {
+export const book = async (args: BookByInfoInput, context: GraphQLContext) => {
   if (args.info.bookId) {
-    return await bookFromDb(args.info, req.user.id);
+    return await bookFromDb(args.info, context.req.user.id);
   }
 
-  return await bookFromWeb(args.info, req.user.id);
+  return await bookFromWeb(args.info, context.req.user.id);
 };
 
 async function haveSameBook(info: BookInfo, userId: string) {
@@ -222,9 +222,9 @@ interface AddBookToBookShelfInput {
 
 export const addBookToBookShelf = async (
   args: AddBookToBookShelfInput,
-  req: Request
+  context: GraphQLContext
 ) => {
-  const user = await User.findById(req.user?.id, 'tmpBooks books');
+  const user = await User.findById(context.req.user?.id, 'tmpBooks books');
   if (!user) {
     throw new Error('登录信息不对，无法添加该书');
   }
@@ -248,8 +248,11 @@ export const addBookToBookShelf = async (
 };
 
 //TODO 去掉无用的接口
-export const createBook = async (args: CreateBookInput, req: Request) => {
-  const isExist = await haveSameBook(args.info, req.user.id);
+export const createBook = async (
+  args: CreateBookInput,
+  context: GraphQLContext
+) => {
+  const isExist = await haveSameBook(args.info, context.req.user.id);
   if (isExist) {
     throw new Error('你已经添加过这本书');
   }
@@ -274,7 +277,7 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
   });
 
   const book = new Book({
-    user: req.user?.id,
+    user: context.req.user?.id,
     name: result.name,
     author: authorId,
     coverUrl: result.coverUrl,
@@ -300,7 +303,7 @@ export const createBook = async (args: CreateBookInput, req: Request) => {
   await book.save();
   await book.populate('author').execPopulate();
 
-  const user = await User.findById(req.user?.id, 'books');
+  const user = await User.findById(context.req.user?.id, 'books');
   if (!user) {
     throw new Error('创建书失败，玩家信息出错。');
   }
@@ -314,8 +317,11 @@ interface DeleteBookInput {
   id: string;
 }
 
-export const deleteBook = async (args: DeleteBookInput, req: Request) => {
-  const user = await User.findById(req.user?.id, 'books');
+export const deleteBook = async (
+  args: DeleteBookInput,
+  context: GraphQLContext
+) => {
+  const user = await User.findById(context.req.user?.id, 'books');
   if (!user) {
     throw new Error('删除书失败，玩家信息出错。');
   }
@@ -336,7 +342,7 @@ export const deleteBook = async (args: DeleteBookInput, req: Request) => {
   user.books.pull(args.id);
   await user.save();
 
-  await Book.deleteOne({_id: args.id, user: req.user.id});
+  await Book.deleteOne({_id: args.id, user: context.req.user.id});
   return true;
 };
 
@@ -344,8 +350,11 @@ interface MoveUpBookInput {
   id: string;
 }
 
-export const moveUpBook = async (args: MoveUpBookInput, req: Request) => {
-  const user = await User.findById(req.user?.id, 'books');
+export const moveUpBook = async (
+  args: MoveUpBookInput,
+  context: GraphQLContext
+) => {
+  const user = await User.findById(context.req.user?.id, 'books');
   if (!user) {
     throw new Error('登录信息不对，无法上移该书');
   }
@@ -366,8 +375,11 @@ interface MoveDownBookInput {
   id: string;
 }
 
-export const moveDownBook = async (args: MoveDownBookInput, req: Request) => {
-  const user = await User.findById(req.user?.id, 'books');
+export const moveDownBook = async (
+  args: MoveDownBookInput,
+  context: GraphQLContext
+) => {
+  const user = await User.findById(context.req.user?.id, 'books');
   if (!user) {
     throw new Error('登录信息不对，无法下移该书');
   }
@@ -391,9 +403,9 @@ interface ReverseOrderBookInput {
 
 export const reverseOrderBook = async (
   args: ReverseOrderBookInput,
-  req: Request
+  context: GraphQLContext
 ) => {
-  const user = await User.findById(req.user?.id, 'books');
+  const user = await User.findById(context.req.user?.id, 'books');
   if (!user) {
     throw new Error('登录信息不对，无法修改章节排列顺序');
   }

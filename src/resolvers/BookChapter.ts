@@ -1,9 +1,10 @@
 import BookChapter from '../models/BookChapter';
 import {getBookSource} from '../BookSourceMgr';
 import {parseChapter, ReqDataChapter} from '../BookSourceParser';
-import {Request} from 'express';
+import {Response} from 'express';
 import Book from '../models/Book';
 import fetchMgr from '../BookFetchMgr';
+import {GraphQLContext} from './index';
 
 interface BookChapterInfo {
   bookId: string;
@@ -23,7 +24,12 @@ export interface BookChapterOutput {
 
 const FETCH_INTERVAL = 600000; // 拉取书数据的最小间隔，单位：毫秒
 
-async function bookChapterFromDb(info: BookChapterInfo, userId: string) {
+async function bookChapterFromDb(
+  info: BookChapterInfo,
+  userId: string,
+  res: Response
+) {
+  res.setMetric('db', 100);
   const book = await Book.findOne(
     {_id: info.bookId, user: userId},
     'spine bookSource catalogUrl contentChanged lastFetchTime'
@@ -94,8 +100,11 @@ async function bookChapterFromDb(info: BookChapterInfo, userId: string) {
   return output;
 }
 
-export const bookChapter = async (args: BookChapterInput, req: Request) => {
-  return await bookChapterFromDb(args.info, req.user.id);
+export const bookChapter = async (
+  args: BookChapterInput,
+  context: GraphQLContext
+) => {
+  return await bookChapterFromDb(args.info, context.req.user.id, context.res);
 };
 
 interface CreateBookChapterInput {

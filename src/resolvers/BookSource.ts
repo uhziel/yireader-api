@@ -2,8 +2,8 @@ import BookSource from '../models/BookSource';
 import User from '../models/User';
 import axios from 'axios';
 import {BookSource as BookSourceContent} from '../BookSourceMgr';
-import {Request} from 'express';
 import {PopulateOptions} from 'mongoose';
+import {GraphQLContext} from '.';
 
 interface CreateBookSourceInput {
   downloadUrl: string;
@@ -44,16 +44,16 @@ export const bookSourcesByUserId = async (
   return user.bookSources;
 };
 
-export const bookSources = async (_: unknown, req: Request) => {
-  return bookSourcesByUserId(req.user?.id);
+export const bookSources = async (_: unknown, context: GraphQLContext) => {
+  return bookSourcesByUserId(context.req.user?.id);
 };
 
 export const createBookSource = async (
   args: CreateBookSourceInput,
-  req: Request
+  context: GraphQLContext
 ) => {
   const bookSourceDoc = await BookSource.findOne({
-    user: req.user?.id,
+    user: context.req.user?.id,
     downloadUrl: args.downloadUrl,
   });
   if (bookSourceDoc) {
@@ -67,13 +67,13 @@ export const createBookSource = async (
     throw new Error('提供的链接不是有效的书源');
   }
 
-  const user = await User.findById(req.user?.id, 'bookSources');
+  const user = await User.findById(context.req.user?.id, 'bookSources');
   if (!user) {
     throw new Error('登录信息不对，无法添加书源');
   }
 
   const newBookSourceDoc = new BookSource({
-    user: req.user?.id,
+    user: context.req.user?.id,
     downloadUrl: args.downloadUrl,
     name: bookSourceContent.name,
     url: bookSourceContent.url,
@@ -95,9 +95,9 @@ interface MoveUpBookSourceInput {
 
 export const moveUpBookSource = async (
   args: MoveUpBookSourceInput,
-  req: Request
+  context: GraphQLContext
 ) => {
-  const user = await User.findById(req.user?.id, 'bookSources');
+  const user = await User.findById(context.req.user?.id, 'bookSources');
   if (!user) {
     throw new Error('登录信息不对，无法上移该书源');
   }
@@ -120,9 +120,9 @@ interface MoveDownBookSourceInput {
 
 export const moveDownBookSource = async (
   args: MoveDownBookSourceInput,
-  req: Request
+  context: GraphQLContext
 ) => {
-  const user = await User.findById(req.user?.id, 'bookSources');
+  const user = await User.findById(context.req.user?.id, 'bookSources');
   if (!user) {
     throw new Error('登录信息不对，无法下移该书源');
   }
@@ -141,11 +141,11 @@ export const moveDownBookSource = async (
 
 export const enableSearchBookSource = async (
   args: EnableSearchBookSourceInput,
-  req: Request
+  context: GraphQLContext
 ) => {
   const bookSource = await BookSource.findOne({
     _id: args.id,
-    user: req.user?.id,
+    user: context.req.user?.id,
   });
   if (!bookSource) {
     return false;
@@ -158,9 +158,9 @@ export const enableSearchBookSource = async (
 
 export const deleteBookSource = async (
   args: DeleteBookSourceInput,
-  req: Request
+  context: GraphQLContext
 ) => {
-  const user = await User.findById(req.user?.id, 'bookSources');
+  const user = await User.findById(context.req.user?.id, 'bookSources');
   if (!user) {
     return false;
   }
@@ -170,6 +170,6 @@ export const deleteBookSource = async (
   }
   user.bookSources.pull(args.id);
   await user.save();
-  await BookSource.deleteOne({_id: args.id, user: req.user?.id});
+  await BookSource.deleteOne({_id: args.id, user: context.req.user?.id});
   return true;
 };
