@@ -29,11 +29,14 @@ async function bookChapterFromDb(
   userId: string,
   res: Response
 ) {
-  res.setMetric('db', 100);
-  const book = await Book.findOne(
-    {_id: info.bookId, user: userId},
-    'spine bookSource catalogUrl contentChanged lastFetchTime'
+  res.startTime('db1', 'Book.findOne');
+  const book = await Book.findById(
+    info.bookId,
+    'user spine bookSource catalogUrl contentChanged lastFetchTime'
   );
+  if (book?.user.toString() !== userId) {
+    throw new Error('抛出错误');
+  }
   if (!book) {
     throw new Error('通过书的id查找书失败。');
   }
@@ -42,13 +45,16 @@ async function bookChapterFromDb(
   if (!chapterEntry) {
     throw new Error('没找到该章节。');
   }
+  res.endTime('db1');
 
+  res.startTime('db2', 'BookChapter.findById');
   const chapter = await BookChapter.findById(chapterEntry._id);
   if (!chapter) {
     return null;
   }
 
   if (!chapter.data) {
+    res.startTime('db3', 'db parseChapter');
     chapter.firstAccessTime = new Date();
 
     const bookSource = await getBookSource(book.bookSource);
@@ -59,15 +65,29 @@ async function bookChapterFromDb(
     const reqData: ReqDataChapter = {
       url: chapter.url,
     };
+    res.startTime('web', 'web parseChapter');
     chapter.data = (await parseChapter(bookSource, reqData)).content;
+    res.endTime('web');
     await chapter.save();
+    res.endTime('db3');
   }
 
   book.readingChapterIndex = info.bookChapterIndex;
   if (book.contentChanged) {
     book.contentChanged = false;
   }
-  await book.save();
+  res.endTime('db2');
+  res.startTime('db4', 'book.save');
+  await Book.updateOne(
+    {_id: book._id},
+    {
+      $set: {
+        readingChapterIndex: book.readingChapterIndex,
+        contentChanged: book.contentChanged,
+      },
+    }
+  );
+  res.endTime('db4');
 
   const output: BookChapterOutput = {
     index: info.bookChapterIndex,
