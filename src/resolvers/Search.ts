@@ -24,7 +24,9 @@ export const search = async (args: SearchInput, context: GraphQLContext) => {
     return [];
   }
   const searchResults: SearchResult[] = [];
+  context.res.startTime('1', '1.getEnabledBookSources');
   const bookSources = await getEnabledBookSources(context.req.user?.id);
+  context.res.endTime('1');
   const promises = bookSources.map(bookSource =>
     parseSearch(bookSource, args.name)
   );
@@ -45,7 +47,7 @@ export const search = async (args: SearchInput, context: GraphQLContext) => {
         searchResults.push(searchResult);
       }
     } catch (e) {
-      console.error(e);
+      console.error('graphql api search.', e);
     }
   }
 

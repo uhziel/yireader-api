@@ -10,6 +10,7 @@ import BookChapter from '../models/BookChapter';
 import {Types} from 'mongoose';
 import GCMgr from '../BookGCMgr';
 import {GraphQLContext} from '.';
+import {Response} from 'express';
 
 interface CreateBookInput {
   info: BookInfo;
@@ -78,12 +79,23 @@ export const books = async (_: unknown, context: GraphQLContext) => {
   return user.books;
 };
 
-async function bookFromDb(bookInfo: BookInfo, userId: string) {
-  const book = await Book.findOne({_id: bookInfo.bookId, user: userId});
+async function bookFromDb(bookInfo: BookInfo, userId: string, res: Response) {
+  res.startTime('all', 'all.bookFromDb');
+  res.startTime('1', '1.Book.findOne');
+  const book = await Book.findOne(
+    {_id: bookInfo.bookId, user: userId},
+    {
+      'spine.url': 0,
+      'spine.chapter': 0,
+    }
+  )
+    .lean()
+    .populate('author');
   if (!book) {
     throw new Error('通过书的id查找书失败。');
   }
-  await book.populate('author').execPopulate();
+  res.endTime('1');
+  book.id = book._id;
   book.inBookshelf = true;
   if (book.readingChapterIndex > -1) {
     const chapter: ChapterEntry = book.spine[book.readingChapterIndex];
@@ -95,9 +107,11 @@ async function bookFromDb(bookInfo: BookInfo, userId: string) {
     }
   }
   if (book.contentChanged) {
-    book.contentChanged = false;
-    await book.save();
+    res.startTime('2', '2.Book.updateOne.contentChanged');
+    await Book.updateOne({_id: book._id}, {$set: {contentChanged: false}});
+    res.endTime('2');
   }
+  res.endTime('all');
   return book;
 }
 
@@ -107,11 +121,17 @@ async function getBookByNameAndAuthor(
   author: string
 ) {
   const authorId = await getAuthorId(author);
-  const book = await Book.findOne({
-    user: userId,
-    name: name,
-    author: authorId,
-  });
+  const book = await Book.findOne(
+    {
+      user: userId,
+      name: name,
+      author: authorId,
+    },
+    {
+      'spine.url': 0,
+      'spine.chapter': 0,
+    }
+  );
 
   return book;
 }
@@ -126,8 +146,10 @@ async function isInBookshelf(bookId: string, userId: string) {
   return pos !== -1;
 }
 
-async function bookFromWeb(bookInfo: BookInfo, userId: string) {
+async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
+  res.startTime('all', 'all.bookFromWeb');
   //如果已经有这本书，则直接返回，不再下载
+  res.startTime('1', '1.getBookByNameAndAuthor');
   const book = await getBookByNameAndAuthor(
     userId,
     bookInfo.name,
@@ -136,14 +158,18 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string) {
   if (book) {
     await book.populate('author').execPopulate();
     book.inBookshelf = await isInBookshelf(book.id, userId);
+    res.endTime('1');
     return book;
   }
+  res.endTime('1');
 
   //读取书源
+  res.startTime('2', '2.getBookSource');
   const bookSource = await getBookSource(bookInfo.bookSourceId);
   if (!bookSource) {
     throw new Error('通过书源id解析书失败。');
   }
+  res.endTime('2');
 
   const reqDataDetail: ReqDataDetail = {
     name: bookInfo.name,
@@ -152,14 +178,21 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string) {
     cover: bookInfo.coverUrl,
     detail: bookInfo.url,
   };
+  res.startTime('3', '3.parseBook');
   const result = await parseBook(bookSource, reqDataDetail);
+  res.endTime('3');
 
+  res.startTime('4', '4.getAuthorId');
   const authorId = await getAuthorId(result.author.name);
+  res.endTime('4');
 
+  res.startTime('5', '5.createWebResourceCover');
   const cover = await createWebResource({
     url: result.coverUrl,
   });
+  res.endTime('5');
 
+  res.startTime('6', '6.CreateBook');
   const newBook = new Book({
     user: userId,
     name: result.name,
@@ -175,7 +208,10 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string) {
     spine: [],
     bookSource: bookInfo.bookSourceId,
   });
+  res.startTime('6.1', '6.1.createBookChapters');
   const bookChapters = await createBookChapters(result.spine);
+  res.endTime('6.1');
+  res.startTime('6.2', '6.2.spine.push');
   for (const chapter of bookChapters) {
     newBook.spine.push({
       _id: chapter.id,
@@ -184,9 +220,16 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string) {
       chapter: chapter.id,
     });
   }
-  await newBook.save();
+  res.endTime('6.2');
+  res.startTime('6.3', '6.3.Book.Save');
+  await newBook.save({validateBeforeSave: false});
+  res.endTime('6.3');
+  res.startTime('6.4', '6.4.Book.populate.author');
   await newBook.populate('author').execPopulate();
+  res.endTime('6.4');
+  res.endTime('6');
 
+  res.startTime('7', '7.User.tmpBooks.push');
   const user = await User.findById(userId, 'tmpBooks');
   if (!user) {
     throw new Error('创建书失败，玩家信息出错。');
@@ -194,15 +237,17 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string) {
 
   user.tmpBooks.push(newBook.id);
   await user.save();
+  res.endTime('7');
+  res.endTime('all');
   return newBook;
 }
 
 export const book = async (args: BookByInfoInput, context: GraphQLContext) => {
   if (args.info.bookId) {
-    return await bookFromDb(args.info, context.req.user.id);
+    return await bookFromDb(args.info, context.req.user.id, context.res);
   }
 
-  return await bookFromWeb(args.info, context.req.user.id);
+  return await bookFromWeb(args.info, context.req.user.id, context.res);
 };
 
 async function haveSameBook(info: BookInfo, userId: string) {

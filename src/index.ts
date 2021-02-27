@@ -14,6 +14,7 @@ if (!MONGODB_URI) {
 import {
   connect as connectMongodb,
   connection as connectionMonogodb,
+  set as setMongooseOptions,
 } from 'mongoose';
 connectMongodb(MONGODB_URI, {
   useNewUrlParser: true,
@@ -23,6 +24,9 @@ connectMongodb(MONGODB_URI, {
   .catch(e => {
     throw new Error(e);
   });
+if (process.env.NODE_ENV !== 'production') {
+  setMongooseOptions('debug', true);
+}
 
 import express from 'express';
 import jwt from './middlewares/jwt';

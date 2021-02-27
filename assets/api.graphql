@@ -88,8 +88,6 @@ type Book {
 
 type ChapterEntry {
   name: String!
-  url: String!
-  chapter: ID
 }
 
 type BookChapter {

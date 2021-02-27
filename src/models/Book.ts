@@ -112,4 +112,6 @@ const bookSchema = new Schema({
   },
 });
 
+bookSchema.index({_id: 1, user: 1});
+
 export default model<BookInterface>('Book', bookSchema);
