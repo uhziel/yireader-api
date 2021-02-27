@@ -29,7 +29,7 @@ async function bookChapterFromDb(
   userId: string,
   res: Response
 ) {
-  res.startTime('db1', 'Book.findOne');
+  res.startTime('db1', '1.Book.findById');
   const book = await Book.findById(
     info.bookId,
     'user spine bookSource catalogUrl contentChanged lastFetchTime'
@@ -47,14 +47,13 @@ async function bookChapterFromDb(
   }
   res.endTime('db1');
 
-  res.startTime('db2', 'BookChapter.findById');
+  res.startTime('db2', '2.BookChapter.findById');
   const chapter = await BookChapter.findById(chapterEntry._id);
   if (!chapter) {
     return null;
   }
 
   if (!chapter.data) {
-    res.startTime('db3', 'db parseChapter');
     chapter.firstAccessTime = new Date();
 
     const bookSource = await getBookSource(book.bookSource);
@@ -65,9 +64,10 @@ async function bookChapterFromDb(
     const reqData: ReqDataChapter = {
       url: chapter.url,
     };
-    res.startTime('web', 'web parseChapter');
+    res.startTime('web', '2.1.parseChapter');
     chapter.data = (await parseChapter(bookSource, reqData)).content;
     res.endTime('web');
+    res.startTime('db3', '2.2.BookChapter.save');
     await chapter.save();
     res.endTime('db3');
   }
@@ -77,7 +77,7 @@ async function bookChapterFromDb(
     book.contentChanged = false;
   }
   res.endTime('db2');
-  res.startTime('db4', 'book.save');
+  res.startTime('db4', '3.Book.save');
   await Book.updateOne(
     {_id: book._id},
     {
