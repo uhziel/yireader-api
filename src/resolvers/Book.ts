@@ -12,10 +12,6 @@ import GCMgr from '../BookGCMgr';
 import {GraphQLContext} from '.';
 import {Response} from 'express';
 
-interface CreateBookInput {
-  info: BookInfo;
-}
-
 interface AuthorInput {
   name: string;
 }
@@ -250,17 +246,6 @@ export const book = async (args: BookByInfoInput, context: GraphQLContext) => {
   return await bookFromWeb(args.info, context.req.user.id, context.res);
 };
 
-async function haveSameBook(info: BookInfo, userId: string) {
-  const authorId = await getAuthorId(info.author.name);
-  const isExist = await Book.exists({
-    user: userId,
-    name: info.name,
-    author: authorId,
-  });
-
-  return isExist;
-}
-
 interface AddBookToBookShelfInput {
   id: string;
 }
@@ -290,72 +275,6 @@ export const addBookToBookShelf = async (
   await user.save();
 
   return true;
-};
-
-//TODO 去掉无用的接口
-export const createBook = async (
-  args: CreateBookInput,
-  context: GraphQLContext
-) => {
-  const isExist = await haveSameBook(args.info, context.req.user.id);
-  if (isExist) {
-    throw new Error('你已经添加过这本书');
-  }
-
-  const bookSource = await getBookSource(args.info.bookSourceId);
-  if (!bookSource) {
-    throw new Error(
-      `Cannot find booksource. bookSourceId: ${args.info.bookSourceId}`
-    );
-  }
-  const reqData: ReqDataDetail = {
-    detail: args.info.url,
-  };
-  console.time('parseBook'); //TODO 去除查看性能的代码
-  const result = await parseBook(bookSource, reqData);
-  console.timeEnd('parseBook');
-
-  const authorId = await getAuthorId(result.author.name);
-
-  const cover = await createWebResource({
-    url: result.coverUrl,
-  });
-
-  const book = new Book({
-    user: context.req.user?.id,
-    name: result.name,
-    author: authorId,
-    coverUrl: result.coverUrl,
-    cover: cover.id,
-    lastChapter: result.lastChapter,
-    status: result.status,
-    summary: result.summary,
-    url: args.info.url,
-    lastUpdateTime: result.update,
-    catalogUrl: result.catalog,
-    spine: [],
-    bookSource: args.info.bookSourceId,
-  });
-  const bookChapters = await createBookChapters(result.spine);
-  for (const chapter of bookChapters) {
-    book.spine.push({
-      _id: '',
-      name: chapter.name,
-      url: chapter.url,
-      chapter: chapter.id,
-    });
-  }
-  await book.save();
-  await book.populate('author').execPopulate();
-
-  const user = await User.findById(context.req.user?.id, 'books');
-  if (!user) {
-    throw new Error('创建书失败，玩家信息出错。');
-  }
-
-  user.books.push(book.id);
-  await user.save();
-  return book;
 };
 
 interface DeleteBookInput {
