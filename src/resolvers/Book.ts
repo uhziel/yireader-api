@@ -188,6 +188,16 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
   res.endTime('5');
 
   res.startTime('6', '6.CreateBook');
+  const spine: ChapterEntry[] = [];
+  res.startTime('6.1', '6.1.spine.push');
+  for (const chapter of result.spine) {
+    spine.push({
+      _id: Types.ObjectId(),
+      name: chapter.name,
+      url: chapter.url,
+    });
+  }
+  res.endTime('6.1');
   const newBook = new Book({
     user: userId,
     name: result.name,
@@ -200,24 +210,15 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
     url: bookInfo.url,
     lastUpdateTime: result.update,
     catalogUrl: result.catalog,
-    spine: [],
+    spine,
     bookSource: bookInfo.bookSourceId,
   });
-  res.startTime('6.2', '6.2.spine.push');
-  for (const chapter of result.spine) {
-    newBook.spine.push({
-      _id: Types.ObjectId(),
-      name: chapter.name,
-      url: chapter.url,
-    });
-  }
-  res.endTime('6.2');
-  res.startTime('6.3', '6.3.Book.Save');
+  res.startTime('6.2', '6.2.Book.Save');
   await newBook.save({validateBeforeSave: false});
-  res.endTime('6.3');
-  res.startTime('6.4', '6.4.Book.populate.author');
+  res.endTime('6.2');
+  res.startTime('6.3', '6.3.Book.populate.author');
   await newBook.populate('author').execPopulate();
-  res.endTime('6.4');
+  res.endTime('6.3');
   res.endTime('6');
 
   res.startTime('7', '7.User.tmpBooks.push');
