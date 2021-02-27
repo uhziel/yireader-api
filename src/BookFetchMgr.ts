@@ -1,7 +1,7 @@
 import {BookInterface} from './models/Book';
 import {getBookSource} from './BookSourceMgr';
 import {parseCatalog, ReqDataCatalog} from './BookSourceParser';
-import {createBookChapters} from './resolvers/BookChapter';
+import {Types} from 'mongoose';
 
 class BookFetchMgr {
   bookIds: string[];
@@ -41,15 +41,15 @@ class BookFetchMgr {
           book.contentChanged = true;
         }
 
-        const bookChapters = await createBookChapters(
-          bookCatalog.slice(book.spine.length, bookCatalog.length)
+        const bookChapters = bookCatalog.slice(
+          book.spine.length,
+          bookCatalog.length
         );
         for (const chapter of bookChapters) {
           book.spine.push({
-            _id: chapter.id,
+            _id: Types.ObjectId(),
             name: chapter.name,
             url: chapter.url,
-            chapter: chapter.id,
           });
         }
       }

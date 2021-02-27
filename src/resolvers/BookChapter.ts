@@ -29,14 +29,11 @@ async function bookChapterFromDb(
   userId: string,
   res: Response
 ) {
-  res.startTime('db1', '1.Book.findById');
-  const book = await Book.findById(
-    info.bookId,
-    'user spine bookSource catalogUrl contentChanged lastFetchTime'
+  res.startTime('1', '1.Book.findOne');
+  const book = await Book.findOne(
+    {_id: info.bookId, user: userId},
+    'spine bookSource catalogUrl contentChanged lastFetchTime'
   );
-  if (book?.user.toString() !== userId) {
-    throw new Error('抛出错误');
-  }
   if (!book) {
     throw new Error('通过书的id查找书失败。');
   }
@@ -45,39 +42,47 @@ async function bookChapterFromDb(
   if (!chapterEntry) {
     throw new Error('没找到该章节。');
   }
-  res.endTime('db1');
+  res.endTime('1');
 
-  res.startTime('db2', '2.BookChapter.findById');
-  const chapter = await BookChapter.findById(chapterEntry._id);
+  res.startTime('2', '2.BookChapter.findById');
+  let chapter = await BookChapter.findById(chapterEntry._id);
   if (!chapter) {
-    return null;
-  }
-
-  if (!chapter.data) {
-    chapter.firstAccessTime = new Date();
-
     const bookSource = await getBookSource(book.bookSource);
     if (!bookSource) {
       throw new Error('通过书源id解析章节失败。');
     }
 
     const reqData: ReqDataChapter = {
-      url: chapter.url,
+      url: chapterEntry.url,
     };
-    res.startTime('web', '2.1.parseChapter');
-    chapter.data = (await parseChapter(bookSource, reqData)).content;
-    res.endTime('web');
-    res.startTime('db3', '2.2.BookChapter.save');
+
+    res.startTime('2.1', '2.1.parseChapter');
+    const data = (await parseChapter(bookSource, reqData)).content;
+    res.endTime('2.1');
+
+    chapter = new BookChapter({
+      _id: chapterEntry._id,
+      name: chapterEntry.name,
+      url: chapterEntry.url,
+      firstAccessTime: new Date(),
+      data,
+    });
+
+    res.startTime('2.2', '2.2.BookChapter.save');
     await chapter.save();
-    res.endTime('db3');
+    res.endTime('2.2');
+  }
+  res.endTime('2');
+  if (!chapter) {
+    return null;
   }
 
   book.readingChapterIndex = info.bookChapterIndex;
   if (book.contentChanged) {
     book.contentChanged = false;
   }
-  res.endTime('db2');
-  res.startTime('db4', '3.Book.save');
+
+  res.startTime('db4', '3.Book.updateOne');
   await Book.updateOne(
     {_id: book._id},
     {
@@ -126,22 +131,3 @@ export const bookChapter = async (
 ) => {
   return await bookChapterFromDb(args.info, context.req.user.id, context.res);
 };
-
-interface CreateBookChapterInput {
-  name: string;
-  url: string;
-}
-
-export const createBookChapter = async (args: CreateBookChapterInput) => {
-  const bookChapter = new BookChapter({
-    name: args.name,
-    url: args.url,
-  });
-  await bookChapter.save();
-  return bookChapter;
-};
-
-export async function createBookChapters(args: CreateBookChapterInput[]) {
-  const chapters = await BookChapter.insertMany(args);
-  return chapters;
-}

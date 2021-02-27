@@ -1,17 +1,15 @@
-import {Schema, Document, model} from 'mongoose';
+import {Schema, Document, model, Types} from 'mongoose';
 import {UserInterface} from './User';
 import {WebResourceInterface} from './WebResource';
 import {AuthorInterface} from './Author';
-import {BookChapterInterface} from './BookChapter';
 import {BookSourceInterface} from './BookSource';
 import {BookFileInterface} from './BookFile';
 import {BookChapterOutput} from '../resolvers/BookChapter';
 
 export interface ChapterEntry {
-  _id: string;
+  _id: Types.ObjectId;
   name: string;
   url: string;
-  chapter?: BookChapterInterface['_id'];
   subEntries?: ChapterEntry[];
 }
 
@@ -47,10 +45,6 @@ const chapterEntrySchema = new Schema({
   url: {
     type: String,
     required: true,
-  },
-  chapter: {
-    type: Schema.Types.ObjectId,
-    ref: 'BookChapter',
   },
   subEntries: [this],
 });

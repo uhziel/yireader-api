@@ -2,7 +2,6 @@ import Book, {BookInterface, ChapterEntry} from '../models/Book';
 import {getBookSource} from '../BookSourceMgr';
 import {parseBook, ReqDataDetail} from '../BookSourceParser';
 import {getAuthorId} from '../resolvers/Author';
-import {createBookChapters} from '../resolvers/BookChapter';
 import {createWebResource} from '../resolvers/WebResource';
 import User from '../models/User';
 import fetchMgr from '../BookFetchMgr';
@@ -204,16 +203,12 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
     spine: [],
     bookSource: bookInfo.bookSourceId,
   });
-  res.startTime('6.1', '6.1.createBookChapters');
-  const bookChapters = await createBookChapters(result.spine);
-  res.endTime('6.1');
   res.startTime('6.2', '6.2.spine.push');
-  for (const chapter of bookChapters) {
+  for (const chapter of result.spine) {
     newBook.spine.push({
-      _id: chapter.id,
+      _id: Types.ObjectId(),
       name: chapter.name,
       url: chapter.url,
-      chapter: chapter.id,
     });
   }
   res.endTime('6.2');
