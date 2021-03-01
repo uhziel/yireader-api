@@ -2,7 +2,7 @@ import Book, {BookInterface, ChapterEntry} from '../models/Book';
 import {getBookSource} from '../BookSourceMgr';
 import {parseBook, ReqDataDetail} from '../BookSourceParser';
 import {getAuthorId} from '../resolvers/Author';
-import {createWebResource} from '../resolvers/WebResource';
+import {_createWebResource} from '../resolvers/WebResource';
 import User from '../models/User';
 import fetchMgr from '../BookFetchMgr';
 import BookChapter from '../models/BookChapter';
@@ -185,9 +185,8 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
   res.endTime('4');
 
   res.startTime('5', '5.createWebResourceCover');
-  const cover = await createWebResource({
-    url: result.coverUrl,
-  });
+  const coverId = Types.ObjectId();
+  _createWebResource(result.coverUrl, coverId);
   res.endTime('5');
 
   res.startTime('6', '6.CreateBook');
@@ -207,7 +206,7 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
     name: result.name,
     author: authorId,
     coverUrl: result.coverUrl,
-    cover: cover.id,
+    cover: coverId,
     lastChapter: result.lastChapter,
     status: result.status,
     summary: result.summary,
