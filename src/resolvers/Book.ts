@@ -126,7 +126,7 @@ async function getBookByNameAndAuthor(
       'spine.url': 0,
       'spine.chapter': 0,
     }
-  );
+  ).lean();
 
   return book;
 }
@@ -151,7 +151,10 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
     bookInfo.author.name
   );
   if (book) {
-    await book.populate('author').execPopulate();
+    book.id = book._id;
+    book.author = {
+      name: bookInfo.author.name,
+    };
     book.inBookshelf = await isInBookshelf(book.id, userId);
     res.endTime('1');
     return book;
@@ -198,7 +201,8 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
     });
   }
   res.endTime('6.1');
-  const newBook = new Book({
+  const newBook = {
+    _id: Types.ObjectId(),
     user: userId,
     name: result.name,
     author: authorId,
@@ -212,13 +216,14 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
     catalogUrl: result.catalog,
     spine,
     bookSource: bookInfo.bookSourceId,
-  });
-  res.startTime('6.2', '6.2.Book.Save');
-  await newBook.save({validateBeforeSave: false});
+  } as BookInterface;
+  res.startTime('6.2', '6.2.Book.insertOne');
+  await Book.insertMany(newBook, {rawResult: true, lean: true});
   res.endTime('6.2');
-  res.startTime('6.3', '6.3.Book.populate.author');
-  await newBook.populate('author').execPopulate();
-  res.endTime('6.3');
+  newBook.id = newBook._id;
+  newBook.author = {
+    name: bookInfo.author.name,
+  };
   res.endTime('6');
 
   res.startTime('7', '7.User.tmpBooks.push');
