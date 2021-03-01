@@ -194,13 +194,11 @@ export function isReqDataDetail(reqData: unknown): reqData is ReqDataDetail {
   return (reqData as ReqDataDetail).detail !== undefined;
 }
 
-export async function parseDetail(
+function parseDetailData(
   bookSource: BookSource,
-  reqData: ReqDataDetail
+  reqData: ReqDataDetail,
+  contentBlock: ContentBlock | null
 ) {
-  const bsHttpReq = genBsHttpReq(reqData.detail);
-  const response = await makeHttpReq(bsHttpReq);
-
   const detailResult = {
     author: '',
     catalog: '',
@@ -212,7 +210,6 @@ export async function parseDetail(
     update: '',
   };
 
-  const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
   if (!contentBlock) {
     return detailResult;
   }
@@ -262,6 +259,17 @@ export async function parseDetail(
   }
 
   return detailResult;
+}
+
+export async function parseDetail(
+  bookSource: BookSource,
+  reqData: ReqDataDetail
+) {
+  const bsHttpReq = genBsHttpReq(reqData.detail);
+  const response = await makeHttpReq(bsHttpReq);
+  const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
+
+  return parseDetailData(bookSource, reqData, contentBlock);
 }
 
 ////////////////////////////////
@@ -318,15 +326,11 @@ function fillCatalogResult(
   catalogResult.push(entry);
 }
 
-export async function parseCatalog(
+function parseCatalogData(
   bookSource: BookSource,
-  reqData: ReqDataCatalog
+  contentBlock: ContentBlock | null
 ) {
-  const bsHttpReq = genBsHttpReq(reqData.catalog);
-  const response = await makeHttpReq(bsHttpReq);
-
   let catalogResult: CatalogEntry[] = [];
-  const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
   if (!contentBlock) {
     return catalogResult;
   }
@@ -349,6 +353,17 @@ export async function parseCatalog(
   }
   catalogResult = clearRepeatlyCatalogEntry(catalogResult);
   return catalogResult;
+}
+
+export async function parseCatalog(
+  bookSource: BookSource,
+  reqData: ReqDataCatalog
+) {
+  const bsHttpReq = genBsHttpReq(reqData.catalog);
+  const response = await makeHttpReq(bsHttpReq);
+  const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
+
+  return parseCatalogData(bookSource, contentBlock);
 }
 
 ////////////////////////////////
@@ -482,13 +497,26 @@ export interface BookResult {
   status: string;
   summary: string;
   update: string;
-  bookSource: string;
   spine: CatalogEntry[];
 }
 export async function parseBook(
   bookSource: BookSource,
   reqData: ReqDataDetail
 ) {
+  let bsHttpReq = genBsHttpReq(reqData.detail);
+  let response = await makeHttpReq(bsHttpReq);
+  let contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
+
+  const bookDetail = parseDetailData(bookSource, reqData, contentBlock);
+
+  if (bookDetail.catalog !== reqData.detail) {
+    bsHttpReq = genBsHttpReq(bookDetail.catalog);
+    response = await makeHttpReq(bsHttpReq);
+    contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
+  }
+
+  let bookCatalog = parseCatalogData(bookSource, contentBlock);
+
   const bookResult: BookResult = {
     author: {
       name: '',
@@ -500,11 +528,9 @@ export async function parseBook(
     status: '',
     summary: '',
     update: '',
-    bookSource: '',
     spine: [],
   };
 
-  const bookDetail = await parseDetail(bookSource, reqData);
   bookResult.author.name = bookDetail.author;
   bookResult.catalog = bookDetail.catalog;
   bookResult.coverUrl = bookDetail.cover;
@@ -513,7 +539,6 @@ export async function parseBook(
   bookResult.status = bookDetail.status;
   bookResult.summary = bookDetail.summary;
   bookResult.update = bookDetail.update;
-  let bookCatalog = await parseCatalog(bookSource, bookDetail);
   bookCatalog = bookCatalog.filter(entry => entry.url.length > 0);
   bookResult.spine = bookCatalog;
 
