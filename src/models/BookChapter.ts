@@ -3,7 +3,7 @@ export interface BookChapterInterface extends Document {
   name: string;
   url: string;
   firstAccessTime?: Date;
-  data?: string;
+  data: string;
 }
 
 const bookChapterSchema = new Schema({
@@ -18,7 +18,10 @@ const bookChapterSchema = new Schema({
   firstAccessTime: {
     type: Date,
   },
-  data: String,
+  data: {
+    type: String,
+    required: true,
+  },
 });
 
 export default model<BookChapterInterface>('BookChapter', bookChapterSchema);

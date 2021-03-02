@@ -440,26 +440,28 @@ async function parseChapterOnePage(bookSource: BookSource, url: string) {
   return allP;
 }
 
+export enum ChapterContentStyle {
+  Text,
+  Html,
+}
+
 export async function parseChapter(
   bookSource: BookSource,
-  reqData: ReqDataChapter
+  reqData: ReqDataChapter,
+  style: ChapterContentStyle = ChapterContentStyle.Text
 ) {
   const bsHttpReq = genBsHttpReq(reqData.url);
   const response = await makeHttpReq(bsHttpReq);
 
   let allP: string[] = [];
-  const chapterResult = {
-    content: '',
-  };
 
   if (!bookSource.chapter.content) {
-    chapterResult.content = response.data;
-    return chapterResult;
+    return response.data;
   }
 
   const contentBlock = createContentBlock(bsHttpReq.reqUrl, response.data);
   if (!contentBlock) {
-    return chapterResult;
+    return '';
   }
 
   for (const iterator of contentBlock.query(bookSource.chapter.content)) {
@@ -479,8 +481,13 @@ export async function parseChapter(
       allP = allP.concat(await parseChapterOnePage(bookSource, attrHref));
     }
   }
-  chapterResult.content = allP.join('\n');
-  return chapterResult;
+  if (style === ChapterContentStyle.Text) {
+    return allP.join('\n');
+  } else {
+    let content = allP.join('</p><p>');
+    content = `<p>${content}</p>`;
+    return content;
+  }
 }
 
 ////////////////////////////////

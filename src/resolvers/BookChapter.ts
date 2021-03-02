@@ -1,6 +1,10 @@
 import BookChapter from '../models/BookChapter';
 import {getBookSource} from '../BookSourceMgr';
-import {parseChapter, ReqDataChapter} from '../BookSourceParser';
+import {
+  parseChapter,
+  ReqDataChapter,
+  ChapterContentStyle,
+} from '../BookSourceParser';
 import {Response} from 'express';
 import Book from '../models/Book';
 import fetchMgr from '../BookFetchMgr';
@@ -57,7 +61,11 @@ async function bookChapterFromDb(
     };
 
     res.startTime('2.1', '2.1.parseChapter');
-    const data = (await parseChapter(bookSource, reqData)).content;
+    const data = await parseChapter(
+      bookSource,
+      reqData,
+      ChapterContentStyle.Html
+    );
     res.endTime('2.1');
 
     chapter = new BookChapter({
