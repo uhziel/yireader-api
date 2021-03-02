@@ -285,6 +285,8 @@ export const deleteBook = async (
   args: DeleteBookInput,
   context: GraphQLContext
 ) => {
+  const res = context.res;
+  res.startTime('1', '1.User.findById');
   const user = await User.findById(context.req.user?.id, 'books');
   if (!user) {
     throw new Error('删除书失败，玩家信息出错。');
@@ -293,20 +295,28 @@ export const deleteBook = async (
   if (pos === -1) {
     throw new Error('删除书失败，玩家没有该书');
   }
-
-  const book = await Book.findById(args.id, 'spine');
+  res.endTime('1');
+  res.startTime('2', '2.Book.findById');
+  const book = await Book.findById(args.id, 'spine').lean();
   if (!book) {
     throw new Error('删除书失败，没找到这本书');
   }
+  res.endTime('2');
 
-  const deletedChapterIds = book.spine.map(chapter => chapter._id);
-
-  await BookChapter.deleteMany({_id: {$in: deletedChapterIds}});
-
+  res.startTime('3', '3.books.pull');
   user.books.pull(args.id);
   await user.save();
+  res.endTime('3');
 
-  await Book.deleteOne({_id: args.id, user: context.req.user.id});
+  res.startTime('4', '4.Book.deleteOne');
+  Book.deleteOne({_id: args.id, user: context.req.user.id}).exec();
+  res.endTime('4');
+
+  res.startTime('5', '5.BookChapter.deleteMany');
+  const deletedChapterIds = book.spine.map(chapter => chapter._id);
+  BookChapter.deleteMany({_id: {$in: deletedChapterIds}}).exec();
+  res.endTime('5');
+
   return true;
 };
 
