@@ -77,7 +77,16 @@ async function bookChapterFromDb(
     });
 
     res.startTime('2.2', '2.2.BookChapter.save');
-    await chapter.save();
+    try {
+      await chapter.save();
+    } catch (e) {
+      if (e.name === 'MongoError' && e.code === 11000) {
+        chapter = await BookChapter.findById(chapterEntry._id);
+      } else {
+        throw e;
+      }
+    }
+
     res.endTime('2.2');
   }
   res.endTime('2');
