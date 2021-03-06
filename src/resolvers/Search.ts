@@ -6,13 +6,9 @@ interface SearchInput {
   name: string;
 }
 
-interface Author {
-  name: string;
-}
-
 interface SearchResult {
   name: string;
-  author: Author;
+  authorName: string;
   summary: string;
   coverUrl: string;
   url: string;
@@ -36,9 +32,7 @@ export const search = async (args: SearchInput, context: GraphQLContext) => {
       for (const iterator of res) {
         const searchResult: SearchResult = {
           name: iterator.name,
-          author: {
-            name: iterator.author,
-          },
+          authorName: iterator.author,
           summary: iterator.summary,
           coverUrl: iterator.cover,
           url: iterator.detail,

@@ -19,6 +19,7 @@ export interface BookInterface extends Document {
   lastAccessTime: Date;
   name: string;
   author: AuthorInterface['_id'];
+  authorName?: string; //TODELETE 临时借用下，后续会删除
   coverUrl: string;
   cover: WebResourceInterface['_id'];
   lastChapter: string;

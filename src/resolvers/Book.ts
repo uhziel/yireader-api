@@ -11,13 +11,9 @@ import GCMgr from '../BookGCMgr';
 import {GraphQLContext} from '.';
 import {Response} from 'express';
 
-interface AuthorInput {
-  name: string;
-}
-
 interface BookInfo {
   name: string;
-  author: AuthorInput;
+  authorName: string;
   summary: string;
   coverUrl: string;
   url: string;
@@ -47,6 +43,7 @@ export const books = async (_: unknown, context: GraphQLContext) => {
   const now = Date.now();
   for (const book of user.books as BookInterface[]) {
     book.inBookshelf = true;
+    book.authorName = book.author.name;
     if (book.readingChapterIndex > -1) {
       const chapter: ChapterEntry = book.spine[book.readingChapterIndex];
       if (chapter) {
@@ -107,6 +104,7 @@ async function bookFromDb(bookInfo: BookInfo, userId: string, res: Response) {
     res.endTime('2');
   }
   res.endTime('all');
+  book.authorName = book.author.name;
   return book;
 }
 
@@ -148,13 +146,11 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
   const book = await getBookByNameAndAuthor(
     userId,
     bookInfo.name,
-    bookInfo.author.name
+    bookInfo.authorName
   );
   if (book) {
     book.id = book._id;
-    book.author = {
-      name: bookInfo.author.name,
-    };
+    book.authorName = bookInfo.authorName;
     book.inBookshelf = await isInBookshelf(book.id, userId);
     res.endTime('1');
     return book;
@@ -171,7 +167,7 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
 
   const reqDataDetail: ReqDataDetail = {
     name: bookInfo.name,
-    author: bookInfo.author.name,
+    author: bookInfo.authorName,
     summary: bookInfo.summary,
     cover: bookInfo.coverUrl,
     detail: bookInfo.url,
@@ -220,9 +216,7 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
   await Book.insertMany(newBook, {rawResult: true, lean: true});
   res.endTime('6.2');
   newBook.id = newBook._id;
-  newBook.author = {
-    name: bookInfo.author.name,
-  };
+  newBook.authorName = bookInfo.authorName;
   res.endTime('6');
 
   res.startTime('7', '7.User.tmpBooks.push');
