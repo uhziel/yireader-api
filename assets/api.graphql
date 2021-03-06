@@ -123,5 +123,6 @@ input BookInfo {
 
 input BookChapterInfo {
   bookId: ID!
-  bookChapterIndex: Int
+  bookChapterIndex: Int!
+  read: Boolean!
 }

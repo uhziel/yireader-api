@@ -13,6 +13,7 @@ import {GraphQLContext} from './index';
 interface BookChapterInfo {
   bookId: string;
   bookChapterIndex: number;
+  read: boolean;
 }
 interface BookChapterInput {
   info: BookChapterInfo;
@@ -72,7 +73,7 @@ async function bookChapterFromDb(
       _id: chapterEntry._id,
       name: chapterEntry.name,
       url: chapterEntry.url,
-      firstAccessTime: new Date(),
+      firstAccessTime: info.read ? new Date() : undefined,
       data,
     });
 
@@ -94,22 +95,34 @@ async function bookChapterFromDb(
     return null;
   }
 
-  book.readingChapterIndex = info.bookChapterIndex;
-  if (book.contentChanged) {
-    book.contentChanged = false;
-  }
-
-  res.startTime('db4', '3.Book.updateOne');
-  await Book.updateOne(
-    {_id: book._id},
-    {
-      $set: {
-        readingChapterIndex: book.readingChapterIndex,
-        contentChanged: book.contentChanged,
-      },
+  if (info.read) {
+    if (!chapter.firstAccessTime) {
+      await BookChapter.updateOne(
+        {_id: chapter._id},
+        {
+          $set: {
+            firstAccessTime: new Date(),
+          },
+        }
+      );
     }
-  );
-  res.endTime('db4');
+    book.readingChapterIndex = info.bookChapterIndex;
+    if (book.contentChanged) {
+      book.contentChanged = false;
+    }
+
+    res.startTime('3', '3.Book.updateOne');
+    await Book.updateOne(
+      {_id: book._id},
+      {
+        $set: {
+          readingChapterIndex: book.readingChapterIndex,
+          contentChanged: book.contentChanged,
+        },
+      }
+    );
+    res.endTime('3');
+  }
 
   const output: BookChapterOutput = {
     index: info.bookChapterIndex,
