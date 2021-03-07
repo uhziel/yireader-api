@@ -71,11 +71,11 @@ export const books = async (_: unknown, context: GraphQLContext) => {
   return user.books;
 };
 
-async function bookFromDb(bookInfo: BookInfo, userId: string, res: Response) {
+async function bookFromDb(bookId: string, userId: string, res: Response) {
   res.startTime('all', 'all.bookFromDb');
   res.startTime('1', '1.Book.findOne');
   const book = await Book.findOne(
-    {_id: bookInfo.bookId, user: userId},
+    {_id: bookId, user: userId},
     {
       'spine.url': 0,
       'spine.chapter': 0,
@@ -234,7 +234,7 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
 
 export const book = async (args: BookByInfoInput, context: GraphQLContext) => {
   if (args.info.bookId) {
-    return await bookFromDb(args.info, context.req.user.id, context.res);
+    return await bookFromDb(args.info.bookId, context.req.user.id, context.res);
   }
 
   return await bookFromWeb(args.info, context.req.user.id, context.res);
