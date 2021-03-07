@@ -18,8 +18,8 @@ async function handleChapter(req: express.Request, res: express.Response) {
     return;
   }
 
-  const result = await parseChapter(bookSource, reqData);
-  res.json(result);
+  const content = await parseChapter(bookSource, reqData);
+  res.json({content});
 }
 
 router.post('/', (req, res, next) => {

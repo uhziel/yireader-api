@@ -6,13 +6,9 @@ interface SearchInput {
   name: string;
 }
 
-interface Author {
-  name: string;
-}
-
 interface SearchResult {
   name: string;
-  author: Author;
+  authorName: string;
   summary: string;
   coverUrl: string;
   url: string;
@@ -24,7 +20,9 @@ export const search = async (args: SearchInput, context: GraphQLContext) => {
     return [];
   }
   const searchResults: SearchResult[] = [];
+  context.res.startTime('1', '1.getEnabledBookSources');
   const bookSources = await getEnabledBookSources(context.req.user?.id);
+  context.res.endTime('1');
   const promises = bookSources.map(bookSource =>
     parseSearch(bookSource, args.name)
   );
@@ -34,9 +32,7 @@ export const search = async (args: SearchInput, context: GraphQLContext) => {
       for (const iterator of res) {
         const searchResult: SearchResult = {
           name: iterator.name,
-          author: {
-            name: iterator.author,
-          },
+          authorName: iterator.author,
           summary: iterator.summary,
           coverUrl: iterator.cover,
           url: iterator.detail,
@@ -45,7 +41,7 @@ export const search = async (args: SearchInput, context: GraphQLContext) => {
         searchResults.push(searchResult);
       }
     } catch (e) {
-      console.error(e);
+      console.error('graphql api search.', e);
     }
   }
 

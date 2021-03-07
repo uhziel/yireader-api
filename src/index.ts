@@ -8,21 +8,26 @@ if (process.env.NODE_ENV !== 'production') {
 
 // mongodb
 const MONGODB_URI = process.env.MONGODB_URI;
-if (!MONGODB_URI) {
-  throw new Error('Please config your env MONGODB_URI first.');
-}
 import {
   connect as connectMongodb,
   connection as connectionMonogodb,
+  set as setMongooseOptions,
 } from 'mongoose';
-connectMongodb(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => console.log(`Connected to ${MONGODB_URI}`))
-  .catch(e => {
-    throw new Error(e);
-  });
+if (!MONGODB_URI) {
+  console.error('Please config your env MONGODB_URI first.');
+} else {
+  connectMongodb(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+    .then(() => console.log(`Connected to ${MONGODB_URI}`))
+    .catch(e => {
+      console.error(e);
+    });
+  if (process.env.NODE_ENV !== 'production') {
+    setMongooseOptions('debug', true);
+  }
+}
 
 import express from 'express';
 import jwt from './middlewares/jwt';
@@ -32,7 +37,7 @@ import detailRouter from './routes/detail';
 import catalogRouter from './routes/catalog';
 import chapterRouter from './routes/chapter';
 import graphqlRouter from './routes/graphql';
-import versionRouter from './routes/version';
+import statusRouter from './routes/status';
 
 import usersRouter from './routes/users';
 
@@ -52,7 +57,7 @@ app.use('/catalog', catalogRouter);
 app.use('/chapter', chapterRouter);
 app.use('/users', usersRouter);
 app.use('/graphql', jwt, graphqlRouter);
-app.use('/version', versionRouter);
+app.use('/status', statusRouter);
 
 console.log(`This process is pid ${process.pid}`);
 const server = app.listen(3001, () => {

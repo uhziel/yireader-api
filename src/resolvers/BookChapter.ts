@@ -1,6 +1,10 @@
 import BookChapter from '../models/BookChapter';
 import {getBookSource} from '../BookSourceMgr';
-import {parseChapter, ReqDataChapter} from '../BookSourceParser';
+import {
+  parseChapter,
+  ReqDataChapter,
+  ChapterContentStyle,
+} from '../BookSourceParser';
 import {Response} from 'express';
 import Book from '../models/Book';
 import fetchMgr from '../BookFetchMgr';
@@ -9,6 +13,7 @@ import {GraphQLContext} from './index';
 interface BookChapterInfo {
   bookId: string;
   bookChapterIndex: number;
+  read: boolean;
 }
 interface BookChapterInput {
   info: BookChapterInfo;
@@ -29,14 +34,11 @@ async function bookChapterFromDb(
   userId: string,
   res: Response
 ) {
-  res.startTime('db1', 'Book.findOne');
-  const book = await Book.findById(
-    info.bookId,
-    'user spine bookSource catalogUrl contentChanged lastFetchTime'
+  res.startTime('1', '1.Book.findOne');
+  const book = await Book.findOne(
+    {_id: info.bookId, user: userId},
+    'spine bookSource catalogUrl contentChanged lastFetchTime'
   );
-  if (book?.user.toString() !== userId) {
-    throw new Error('抛出错误');
-  }
   if (!book) {
     throw new Error('通过书的id查找书失败。');
   }
@@ -45,49 +47,82 @@ async function bookChapterFromDb(
   if (!chapterEntry) {
     throw new Error('没找到该章节。');
   }
-  res.endTime('db1');
+  res.endTime('1');
 
-  res.startTime('db2', 'BookChapter.findById');
-  const chapter = await BookChapter.findById(chapterEntry._id);
+  res.startTime('2', '2.BookChapter.findById');
+  let chapter = await BookChapter.findById(chapterEntry._id);
   if (!chapter) {
-    return null;
-  }
-
-  if (!chapter.data) {
-    res.startTime('db3', 'db parseChapter');
-    chapter.firstAccessTime = new Date();
-
     const bookSource = await getBookSource(book.bookSource);
     if (!bookSource) {
       throw new Error('通过书源id解析章节失败。');
     }
 
     const reqData: ReqDataChapter = {
-      url: chapter.url,
+      url: chapterEntry.url,
     };
-    res.startTime('web', 'web parseChapter');
-    chapter.data = (await parseChapter(bookSource, reqData)).content;
-    res.endTime('web');
-    await chapter.save();
-    res.endTime('db3');
+
+    res.startTime('2.1', '2.1.parseChapter');
+    const data = await parseChapter(
+      bookSource,
+      reqData,
+      ChapterContentStyle.Html
+    );
+    res.endTime('2.1');
+
+    chapter = new BookChapter({
+      _id: chapterEntry._id,
+      name: chapterEntry.name,
+      url: chapterEntry.url,
+      firstAccessTime: info.read ? new Date() : undefined,
+      data,
+    });
+
+    res.startTime('2.2', '2.2.BookChapter.save');
+    try {
+      await chapter.save();
+    } catch (e) {
+      if (e.name === 'MongoError' && e.code === 11000) {
+        chapter = await BookChapter.findById(chapterEntry._id);
+      } else {
+        throw e;
+      }
+    }
+
+    res.endTime('2.2');
+  }
+  res.endTime('2');
+  if (!chapter) {
+    return null;
   }
 
-  book.readingChapterIndex = info.bookChapterIndex;
-  if (book.contentChanged) {
-    book.contentChanged = false;
-  }
-  res.endTime('db2');
-  res.startTime('db4', 'book.save');
-  await Book.updateOne(
-    {_id: book._id},
-    {
-      $set: {
-        readingChapterIndex: book.readingChapterIndex,
-        contentChanged: book.contentChanged,
-      },
+  if (info.read) {
+    if (!chapter.firstAccessTime) {
+      await BookChapter.updateOne(
+        {_id: chapter._id},
+        {
+          $set: {
+            firstAccessTime: new Date(),
+          },
+        }
+      );
     }
-  );
-  res.endTime('db4');
+    book.readingChapterIndex = info.bookChapterIndex;
+    if (book.contentChanged) {
+      book.contentChanged = false;
+    }
+
+    res.startTime('3', '3.Book.updateOne');
+    await Book.updateOne(
+      {_id: book._id},
+      {
+        $set: {
+          readingChapterIndex: book.readingChapterIndex,
+          contentChanged: book.contentChanged,
+        },
+      }
+    );
+    res.endTime('3');
+  }
 
   const output: BookChapterOutput = {
     index: info.bookChapterIndex,
@@ -126,22 +161,3 @@ export const bookChapter = async (
 ) => {
   return await bookChapterFromDb(args.info, context.req.user.id, context.res);
 };
-
-interface CreateBookChapterInput {
-  name: string;
-  url: string;
-}
-
-export const createBookChapter = async (args: CreateBookChapterInput) => {
-  const bookChapter = new BookChapter({
-    name: args.name,
-    url: args.url,
-  });
-  await bookChapter.save();
-  return bookChapter;
-};
-
-export async function createBookChapters(args: CreateBookChapterInput[]) {
-  const chapters = await BookChapter.insertMany(args);
-  return chapters;
-}

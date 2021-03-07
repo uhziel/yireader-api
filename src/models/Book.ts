@@ -1,17 +1,15 @@
-import {Schema, Document, model} from 'mongoose';
+import {Schema, Document, model, Types} from 'mongoose';
 import {UserInterface} from './User';
 import {WebResourceInterface} from './WebResource';
 import {AuthorInterface} from './Author';
-import {BookChapterInterface} from './BookChapter';
 import {BookSourceInterface} from './BookSource';
 import {BookFileInterface} from './BookFile';
 import {BookChapterOutput} from '../resolvers/BookChapter';
 
 export interface ChapterEntry {
-  _id: string;
+  _id: Types.ObjectId;
   name: string;
   url: string;
-  chapter?: BookChapterInterface['_id'];
   subEntries?: ChapterEntry[];
 }
 
@@ -21,6 +19,7 @@ export interface BookInterface extends Document {
   lastAccessTime: Date;
   name: string;
   author: AuthorInterface['_id'];
+  authorName?: string; //TODELETE 临时借用下，后续会删除
   coverUrl: string;
   cover: WebResourceInterface['_id'];
   lastChapter: string;
@@ -47,10 +46,6 @@ const chapterEntrySchema = new Schema({
   url: {
     type: String,
     required: true,
-  },
-  chapter: {
-    type: Schema.Types.ObjectId,
-    ref: 'BookChapter',
   },
   subEntries: [this],
 });
@@ -111,5 +106,7 @@ const bookSchema = new Schema({
     ref: 'BookFile',
   },
 });
+
+bookSchema.index({_id: 1, user: 1});
 
 export default model<BookInterface>('Book', bookSchema);
