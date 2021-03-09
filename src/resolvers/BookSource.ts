@@ -4,6 +4,7 @@ import axios from 'axios';
 import {BookSource as BookSourceContent} from '../BookSourceMgr';
 import {PopulateOptions} from 'mongoose';
 import {GraphQLContext} from '.';
+import {URL} from 'url';
 
 interface CreateBookSourceInput {
   downloadUrl: string;
@@ -48,6 +49,39 @@ export const bookSources = async (_: unknown, context: GraphQLContext) => {
   return bookSourcesByUserId(context.req.user?.id);
 };
 
+function getCdnUrl(url: string) {
+  const urlObject = new URL(url);
+  if (urlObject.origin === 'https://raw.githubusercontent.com') {
+    if (urlObject.pathname.length > 1) {
+      const parts = urlObject.pathname.split('/');
+      if (parts.length >= 5) {
+        const author = parts[1];
+        const repo = parts[2];
+        const cdnUrl = `https://cdn.jsdelivr.net/gh/${author}/${repo}/${parts
+          .slice(4)
+          .join('/')}`;
+        return cdnUrl;
+      }
+    }
+  }
+  return null;
+}
+
+async function fetchBookSource(url: string) {
+  const cdnUrl = getCdnUrl(url);
+  if (cdnUrl) {
+    try {
+      const response = await axios.get(cdnUrl);
+      return response;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  const response = await axios.get(url);
+  return response;
+}
+
 export const createBookSource = async (
   args: CreateBookSourceInput,
   context: GraphQLContext
@@ -60,7 +94,7 @@ export const createBookSource = async (
     throw new Error('不要重复添加书源');
   }
 
-  const response = await axios.get(args.downloadUrl);
+  const response = await fetchBookSource(args.downloadUrl);
   const bookSourceContent: BookSourceContent = response.data;
 
   if (!bookSourceContent || typeof bookSourceContent === 'string') {
