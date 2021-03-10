@@ -10,6 +10,7 @@ import {Types} from 'mongoose';
 import GCMgr from '../BookGCMgr';
 import {GraphQLContext} from '.';
 import {Response} from 'express';
+import WebResource from '../models/WebResource';
 
 interface BookInfo {
   name: string;
@@ -44,6 +45,9 @@ export const books = async (_: unknown, context: GraphQLContext) => {
   for (const book of user.books as BookInterface[]) {
     book.inBookshelf = true;
     book.authorName = book.author.name;
+    if (book.cover) {
+      book.coverUrl = '/webresource/' + book.cover.toString();
+    }
     if (book.readingChapterIndex > -1) {
       const chapter: ChapterEntry = book.spine[book.readingChapterIndex];
       if (chapter) {
@@ -105,6 +109,9 @@ async function bookFromDb(bookId: string, userId: string, res: Response) {
   }
   res.endTime('all');
   book.authorName = book.author.name;
+  if (book.cover) {
+    book.coverUrl = '/webresource/' + book.cover.toString();
+  }
   return book;
 }
 
@@ -151,6 +158,9 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
   if (book) {
     book.id = book._id;
     book.authorName = bookInfo.authorName;
+    if (book.cover) {
+      book.coverUrl = '/webresource/' + book.cover.toString();
+    }
     book.inBookshelf = await isInBookshelf(book.id, userId);
     res.endTime('1');
     return book;
@@ -182,7 +192,8 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
 
   res.startTime('5', '5.createWebResourceCover');
   const coverId = Types.ObjectId();
-  _createWebResource(result.coverUrl, coverId);
+  const bookId = Types.ObjectId();
+  const coverPromise = _createWebResource(result.coverUrl, coverId);
   res.endTime('5');
 
   res.startTime('6', '6.CreateBook');
@@ -197,12 +208,11 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
   }
   res.endTime('6.1');
   const newBook = {
-    _id: Types.ObjectId(),
+    _id: bookId,
     user: userId,
     name: result.name,
     author: authorId,
     coverUrl: result.coverUrl,
-    cover: coverId,
     lastChapter: result.lastChapter,
     status: result.status,
     summary: result.summary,
@@ -228,6 +238,12 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
   user.tmpBooks.push(newBook.id);
   await user.save();
   res.endTime('7');
+
+  coverPromise
+    .then(() => {
+      Book.updateOne({_id: bookId}, {$set: {cover: coverId}}).exec();
+    })
+    .catch(console.error);
   res.endTime('all');
   return newBook;
 }
@@ -291,7 +307,7 @@ export const deleteBook = async (
   }
   res.endTime('1');
   res.startTime('2', '2.Book.findById');
-  const book = await Book.findById(args.id, 'spine').lean();
+  const book = await Book.findById(args.id, 'spine cover').lean();
   if (!book) {
     throw new Error('删除书失败，没找到这本书');
   }
@@ -310,6 +326,12 @@ export const deleteBook = async (
   const deletedChapterIds = book.spine.map(chapter => chapter._id);
   BookChapter.deleteMany({_id: {$in: deletedChapterIds}}).exec();
   res.endTime('5');
+
+  res.startTime('6', '6.deleteCover');
+  if (book.cover) {
+    WebResource.deleteOne({_id: book.cover}).exec();
+  }
+  res.endTime('6');
 
   return true;
 };

@@ -1,6 +1,7 @@
 import Book from './models/Book';
 import BookChapter from './models/BookChapter';
 import User from './models/User';
+import WebResource from './models/WebResource';
 
 interface BookGCEntry {
   userId: string;
@@ -33,14 +34,19 @@ class BookGCMgr {
         throw new Error('自动删除书失败，玩家没有该书');
       }
 
-      const book = await Book.findById(bookId, 'spine');
+      const book = await Book.findById(bookId, 'spine cover');
       if (!book) {
         throw new Error('自动删除书失败，没找到这本书');
       }
 
       const deletedChapterIds = book.spine.map(chapter => chapter._id);
 
+      //TODO 考虑合并两处删除书的地方到一起
       await BookChapter.deleteMany({_id: {$in: deletedChapterIds}});
+
+      if (book.cover) {
+        await WebResource.deleteOne({_id: book.cover});
+      }
 
       user.tmpBooks.pull(bookId);
       await user.save();
