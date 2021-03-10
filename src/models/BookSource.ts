@@ -7,7 +7,7 @@ export interface BookSourceInterface extends Document {
   url: string;
   version: number;
   data: string;
-  lastFetchTime: Date;
+  fetchedAt: Date;
   enableSearch: boolean;
 }
 
@@ -37,7 +37,7 @@ const bookSourceSchema = new Schema({
     type: String,
     required: true,
   },
-  lastFetchTime: {
+  fetchedAt: {
     type: Date,
     default: Date.now,
   },

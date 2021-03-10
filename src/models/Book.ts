@@ -16,7 +16,7 @@ export interface ChapterEntry {
 export interface BookInterface extends Document {
   inBookshelf: boolean;
   user: UserInterface['_id'];
-  lastAccessTime: Date;
+  accessedAt: Date;
   name: string;
   author: AuthorInterface['_id'];
   authorName?: string; //TODELETE 临时借用下，后续会删除
@@ -26,8 +26,8 @@ export interface BookInterface extends Document {
   status: string;
   summary: string;
   url: string;
-  lastUpdateTime: string;
-  lastFetchTime: Date;
+  contentUpdatedTime: string;
+  fetchedAt: Date;
   catalogUrl: string;
   readingChapterIndex: number;
   readingChapter?: BookChapterOutput;
@@ -56,7 +56,7 @@ const bookSchema = new Schema({
     required: true,
     ref: 'User',
   },
-  lastAccessTime: {
+  accessedAt: {
     type: Date,
     default: 0,
   },
@@ -78,8 +78,8 @@ const bookSchema = new Schema({
   status: String,
   summary: String,
   url: String,
-  lastUpdateTime: String,
-  lastFetchTime: {
+  contentUpdatedTime: String,
+  fetchedAt: {
     type: Date,
     default: Date.now,
   },
@@ -102,6 +102,7 @@ const bookSchema = new Schema({
     ref: 'BookSource',
   },
   bookFile: {
+    // 非必须的字段，如果没填值，不会出现在 mongodb 里
     type: Schema.Types.ObjectId,
     ref: 'BookFile',
   },

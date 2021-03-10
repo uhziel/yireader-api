@@ -37,7 +37,7 @@ async function bookChapterFromDb(
   res.startTime('1', '1.Book.findOne');
   const book = await Book.findOne(
     {_id: info.bookId, user: userId},
-    'spine bookSource catalogUrl contentChanged lastFetchTime'
+    'spine bookSource catalogUrl contentChanged fetchedAt'
   );
   if (!book) {
     throw new Error('通过书的id查找书失败。');
@@ -73,7 +73,7 @@ async function bookChapterFromDb(
       _id: chapterEntry._id,
       name: chapterEntry.name,
       url: chapterEntry.url,
-      firstAccessTime: info.read ? new Date() : undefined,
+      firstAccessedAt: info.read ? new Date() : undefined,
       data,
     });
 
@@ -96,12 +96,12 @@ async function bookChapterFromDb(
   }
 
   if (info.read) {
-    if (!chapter.firstAccessTime) {
+    if (!chapter.firstAccessedAt) {
       await BookChapter.updateOne(
         {_id: chapter._id},
         {
           $set: {
-            firstAccessTime: new Date(),
+            firstAccessedAt: new Date(),
           },
         }
       );
@@ -137,7 +137,7 @@ async function bookChapterFromDb(
     };
     const now = Date.now();
     if (book.spine.length - info.bookChapterIndex < 10) {
-      const timeDiff = now - book.lastFetchTime.valueOf();
+      const timeDiff = now - book.fetchedAt.valueOf();
       if (timeDiff > FETCH_INTERVAL) {
         if (!fetchMgr.isFetching(book.id)) {
           fetchMgr.add(book.id);

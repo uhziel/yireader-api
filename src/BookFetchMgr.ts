@@ -57,7 +57,7 @@ class BookFetchMgr {
           });
         }
       }
-      book.lastFetchTime = new Date();
+      book.fetchedAt = new Date();
       await book.save();
     } finally {
       const pos = this.bookIds.indexOf(bookId);

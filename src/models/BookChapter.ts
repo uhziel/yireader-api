@@ -2,7 +2,7 @@ import {Schema, Document, model} from 'mongoose';
 export interface BookChapterInterface extends Document {
   name: string;
   url: string;
-  firstAccessTime?: Date;
+  firstAccessedAt?: Date;
   data: string;
 }
 
@@ -15,7 +15,7 @@ const bookChapterSchema = new Schema({
     type: String,
     required: true,
   },
-  firstAccessTime: {
+  firstAccessedAt: {
     type: Date,
   },
   data: {

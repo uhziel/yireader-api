@@ -57,7 +57,7 @@ export const books = async (_: unknown, context: GraphQLContext) => {
         };
       }
     }
-    const timeDiff = now - book.lastFetchTime.valueOf();
+    const timeDiff = now - book.fetchedAt.valueOf();
     if (timeDiff > FETCH_INTERVAL) {
       if (!fetchMgr.isFetching(book.id)) {
         fetchMgr.add(book.id);
@@ -217,7 +217,7 @@ async function bookFromWeb(bookInfo: BookInfo, userId: string, res: Response) {
     status: result.status,
     summary: result.summary,
     url: bookInfo.url,
-    lastUpdateTime: result.update,
+    contentUpdatedTime: result.update,
     catalogUrl: result.catalog,
     spine,
     bookSource: bookInfo.bookSourceId,
