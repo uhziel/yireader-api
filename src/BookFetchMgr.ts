@@ -1,4 +1,4 @@
-import {BookInterface} from './models/Book';
+import Book from './models/Book';
 import {getBookSource} from './BookSourceMgr';
 import {parseCatalog, ReqDataCatalog} from './BookSourceParser';
 import {Types} from 'mongoose';
@@ -10,13 +10,17 @@ class BookFetchMgr {
     this.bookIds = [];
   }
 
-  async add(book: BookInterface) {
-    if (this.isFetching(book.id)) {
+  async add(bookId: string) {
+    if (this.isFetching(bookId)) {
       return;
     }
 
-    this.bookIds.push(book.id);
+    this.bookIds.push(bookId);
     try {
+      const book = await Book.findById(bookId);
+      if (!book) {
+        throw new Error('没有找到书。');
+      }
       const bookSource = await getBookSource(book.bookSource);
       if (!bookSource) {
         throw new Error('通过书源id解析书失败。');
@@ -56,7 +60,7 @@ class BookFetchMgr {
       book.lastFetchTime = new Date();
       await book.save();
     } finally {
-      const pos = this.bookIds.indexOf(book.id);
+      const pos = this.bookIds.indexOf(bookId);
       if (pos !== -1) {
         this.bookIds.splice(pos, 1);
       }

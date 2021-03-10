@@ -140,7 +140,7 @@ async function bookChapterFromDb(
       const timeDiff = now - book.lastFetchTime.valueOf();
       if (timeDiff > FETCH_INTERVAL) {
         if (!fetchMgr.isFetching(book.id)) {
-          fetchMgr.add(book);
+          fetchMgr.add(book.id);
         }
       }
     }
