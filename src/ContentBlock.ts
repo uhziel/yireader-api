@@ -134,6 +134,9 @@ function extractJsonData(
   obj: any,
   exp: string
 ): string {
+  if (typeof obj === 'string' && exp === '$') {
+    return obj;
+  }
   if (exp.indexOf('$.') === 0) {
     return jpValue(obj, exp);
   }
