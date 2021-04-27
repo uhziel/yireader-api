@@ -39,12 +39,18 @@ import chapterRouter from './routes/chapter';
 import graphqlRouter from './routes/graphql';
 import statusRouter from './routes/status';
 import webresourceRouter from './routes/webresource';
+import inkRouter from './routes/ink';
 
 import usersRouter from './routes/users';
 
 const app: express.Application = express();
 
 app.disable('x-powered-by');
+
+// view engine setup: ejs
+app.set('views', 'assets/views');
+app.set('view engine', 'ejs');
+app.set('view options', {compileDebug: false, debug: true, strict: false});
 
 import serverTiming from 'server-timing';
 app.use(serverTiming());
@@ -70,6 +76,7 @@ app.use('/users', usersRouter);
 app.use('/graphql', jwt, graphqlRouter);
 app.use('/status', statusRouter);
 app.use('/webresource', webresourceRouter);
+app.use('/ink', inkRouter);
 
 console.log(`This process is pid ${process.pid}`);
 const server = app.listen(3001, () => {
