@@ -1,1 +1,8 @@
-<p>hello, world</p>
+<%- include('./partials/header'); %>
+<% if (user.username) { %>
+    <p>hello, <%= user.username %></p>
+<% } else { %>
+    <a href="/ink/login">Login</a>
+<% } %>
+<a href="/ink/logout">Logout</a>
+<%- include('./partials/footer') %> 

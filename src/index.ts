@@ -50,7 +50,7 @@ app.disable('x-powered-by');
 // view engine setup: ejs
 app.set('views', 'assets/views');
 app.set('view engine', 'ejs');
-app.set('view options', {compileDebug: false, debug: true, strict: false});
+app.set('view options', {compileDebug: true, debug: true, strict: false});
 
 import serverTiming from 'server-timing';
 app.use(serverTiming());
