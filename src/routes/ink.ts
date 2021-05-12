@@ -7,6 +7,9 @@ import cookieParser from 'cookie-parser';
 import flash from 'connect-flash';
 import {version} from '../../package.json';
 import jwtCookie from '../middlewares/jwtCookie';
+import Debug from 'debug';
+
+const debug = Debug('app:ink');
 
 const SECRET_KEY = process.env.SECRET_KEY || 'yireader';
 const TOKEN_LIFETIME = '1y';
@@ -33,7 +36,7 @@ router.use((req, res, next) => {
 });
 
 router.get('/', jwtCookie, (req, res) => {
-  console.log(req.cookies);
+  debug(req.cookies);
   res.locals.user = req.user;
   res.render('index');
 });
@@ -69,7 +72,7 @@ async function handleLogin(req: Request, res: Response) {
   res.redirect('/ink');
 }
 
-router.post('/login', urlencoded(), (req, res, next) => {
+router.post('/login', urlencoded({extended: false}), (req, res, next) => {
   handleLogin(req, res).catch(e => next(e));
 });
 
