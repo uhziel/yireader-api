@@ -12,7 +12,7 @@ import {queryBook, queryBooks} from '../services/Book';
 import asyncMiddleware from '../middlewares/asyncMiddleware';
 import {queryBookChapter} from '../services/BookChapter';
 
-const debug = Debug('app:ink');
+const debug = Debug('yireader:inkRouter');
 
 const SECRET_KEY = process.env.SECRET_KEY || 'yireader';
 const TOKEN_LIFETIME = '1y';

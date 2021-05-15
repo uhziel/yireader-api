@@ -40,6 +40,7 @@ import graphqlRouter from './routes/graphql';
 import statusRouter from './routes/status';
 import webresourceRouter from './routes/webresource';
 import inkRouter from './routes/ink';
+import debugRouter from './routes/debug';
 
 import usersRouter from './routes/users';
 
@@ -77,6 +78,7 @@ app.use('/graphql', jwt, graphqlRouter);
 app.use('/status', statusRouter);
 app.use('/webresource', webresourceRouter);
 app.use('/ink', inkRouter);
+app.use('/debug', debugRouter);
 
 console.log(`This process is pid ${process.pid}`);
 const server = app.listen(3001, () => {
