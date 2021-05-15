@@ -1,0 +1,13 @@
+<%- include('./partials/header'); %>
+<ul>
+    <li><%= book.name %> </li>
+    <li><%= book.authorName %> </li>
+    <li><%= book.lastChapter %> </li>
+    <li><%= book.summary %> </li>
+</ul>
+<div>目录
+<% book.spine.forEach((chapter, index) => { %>
+   <p><a href="/ink/bookchapter/<%= book.id %>/<%= index %>"><%= chapter.name %></a></p> 
+<% }); %>
+</div>
+<%- include('./partials/footer') %>

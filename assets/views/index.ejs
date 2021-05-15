@@ -4,5 +4,10 @@
 <% } else { %>
     <a href="/ink/login">Login</a>
 <% } %>
+<ol>
+<% books.forEach(book => { %>
+    <li><a href="/ink/bookdetail/<%= book.id %>"><%= book.name %></a> <%= book.authorName %></li>
+<% }); %>
+</ol>
 <a href="/ink/logout">Logout</a>
-<%- include('./partials/footer') %> 
+<%- include('./partials/footer') %>

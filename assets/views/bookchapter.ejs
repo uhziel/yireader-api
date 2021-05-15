@@ -1,0 +1,16 @@
+<%- include('./partials/header'); %>
+<ul>
+    <li><%= bookChapter.name %> </li>
+</ul>
+<div>
+<%- bookChapter.data %>
+</div>
+<% if (bookChapter.prev) { %> 
+    <p><a href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.prev.index %>"><%= bookChapter.prev.name %></a></p>
+<% } %>
+<p><a href="/ink/bookdetail/<%= bookId %>">目录</a></p>
+<% if (bookChapter.next) { %> 
+    <p><a href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.next.index %>"><%= bookChapter.next.name %></a></p>
+<% } %>
+
+<%- include('./partials/footer') %>

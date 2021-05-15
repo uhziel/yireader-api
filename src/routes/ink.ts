@@ -8,6 +8,9 @@ import flash from 'connect-flash';
 import {version} from '../../package.json';
 import jwtCookie from '../middlewares/jwtCookie';
 import Debug from 'debug';
+import {queryBook, queryBooks} from '../services/Book';
+import asyncMiddleware from '../middlewares/asyncMiddleware';
+import {queryBookChapter} from '../services/BookChapter';
 
 const debug = Debug('app:ink');
 
@@ -35,11 +38,42 @@ router.use((req, res, next) => {
   next();
 });
 
-router.get('/', jwtCookie, (req, res) => {
-  debug(req.cookies);
-  res.locals.user = req.user;
-  res.render('index');
-});
+router.get(
+  '/',
+  jwtCookie,
+  asyncMiddleware(async (req: Request, res: Response) => {
+    debug(req.cookies);
+    res.locals.user = req.user;
+    res.locals.books = await queryBooks(req.user.id);
+    res.render('index');
+  })
+);
+
+router.get(
+  '/bookdetail/:bookId',
+  jwtCookie,
+  asyncMiddleware(async (req, res) => {
+    res.locals.book = await queryBook(req.params.bookId, req.user.id);
+    res.render('bookdetail');
+  })
+);
+
+router.get(
+  '/bookchapter/:bookId/:index',
+  jwtCookie,
+  asyncMiddleware(async (req, res) => {
+    res.locals.bookId = req.params.bookId;
+    res.locals.bookChapter = await queryBookChapter(
+      {
+        bookId: req.params.bookId,
+        bookChapterIndex: parseInt(req.params.index),
+        read: true,
+      },
+      req.user.id
+    );
+    res.render('bookchapter');
+  })
+);
 
 router.get('/login', (_req, res) => {
   res.render('login');
