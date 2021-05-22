@@ -1,16 +1,25 @@
 <%- include('./partials/header'); %>
-<ul>
-    <li><%= bookChapter.name %> </li>
-</ul>
 <div id="mainContent">
-<%- bookChapter.data %>
+    <h1 class="textCenter"><%= bookChapter.name %></h1>
+    <div id="chapterContent">
+        <%- bookChapter.data %>
+    </div>
 </div>
-<% if (bookChapter.prev) { %> 
-    <p><a href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.prev.index %>"><%= bookChapter.prev.name %></a></p>
-<% } %>
-<p><a href="/ink/bookdetail/<%= bookId %>">目录</a></p>
-<% if (bookChapter.next) { %> 
-    <p><a href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.next.index %>"><%= bookChapter.next.name %></a></p>
-<% } %>
+<div class="navbar">
+    <% if (bookChapter.next) { %> 
+        <span class="anchor toRight" data-href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.next.index %>")>下一章</span>
+    <% } else { %>
+        <span class="disabledAnchor toRight">下一章</span>
+    <% } %>
+    <% if (bookChapter.prev) { %> 
+        <span class="anchor toRight" data-href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.prev.index %>")>上一章</span>
+    <% } else { %>
+        <span class="disabledAnchor toRight">上一章</span>
+    <% } %>
+    <span class="anchor" data-href="/ink/">首页</span>
+    <span class="anchor" data-href="/ink/bookdetail/<%= bookId %>">目录</span>
+    <span onclick="changeFontSize(0.1)">放大</span>
+    <span onclick="changeFontSize(-0.1)">缩小</span>
+</div>
 
 <%- include('./partials/footer') %>

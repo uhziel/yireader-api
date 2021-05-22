@@ -100,7 +100,7 @@ async function handleLogin(req: Request, res: Response) {
     expiresIn: TOKEN_LIFETIME,
   });
   res.cookie('token', token, {
-    maxAge: 31536000, //1年有效期
+    maxAge: 31536000 * 1000, //1年有效期
     httpOnly: true,
   });
   res.redirect('/ink');

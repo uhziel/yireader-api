@@ -62,7 +62,7 @@ const fingerprintRegExp = /\.[0-9a-f]{8}\./;
 app.use(
   express.static('dist', {
     setHeaders: (res, path) => {
-      if (fingerprintRegExp.test(path) || path.indexOf('/js/') !== -1) {
+      if (fingerprintRegExp.test(path)) {
         res.set('Cache-Control', 'max-age=31536000'); //1年有效期
       }
     },

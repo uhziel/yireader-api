@@ -1,0 +1,50 @@
+.navbar {
+    position: fixed;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    height: 35px;
+    line-height: 35px;
+    padding: 0 10px;
+    background-color: #fff;
+    border-top: 2px solid #7f7f7f;
+    font-size: 20px;
+}
+
+.navbar span {
+    cursor: pointer;
+    padding: 0 10px;
+}
+
+.toRight {
+    float: right;
+}
+
+#mainContent {
+    margin-bottom: 30px;
+}
+
+#chapterContent {
+    text-indent: 2em;
+}
+
+body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+body, input, button, select {
+    font-family: -system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Cantarell,
+        "DejaVu Sans", sans-serif, "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-size: 30px;
+}
+
+.disabledAnchor {
+    pointer-events: none !important;
+    cursor: default;
+    color:Gray;
+}
+
+.textCenter {
+    text-align: center!important;
+}
