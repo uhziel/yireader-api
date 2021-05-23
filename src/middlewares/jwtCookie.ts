@@ -9,18 +9,18 @@ interface JWTPayload {
 }
 
 export const jwtCookie = (req: Request, res: Response, next: NextFunction) => {
-  const p = new Promise((resolve, reject) => {
+  const p = new Promise(resolve => {
     const token = req.cookies['token'] as string;
     if (!token) {
       res.redirect('/ink/login');
-      reject(new Error('请先登录'));
+      resolve(null);
       return;
     }
 
     verifyJWT(token, SECRET_KEY, (e, data) => {
       if (e) {
         res.redirect('/ink/login');
-        reject(e);
+        resolve(null);
         return;
       }
       const payload = data as JWTPayload;

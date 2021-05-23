@@ -1,17 +1,19 @@
 <%- include('./partials/header'); %>
-<% if (user.username) { %>
-    <p>hello, <%= user.username %></p>
-<% } else { %>
-    <a href="/ink/login">Login</a>
-<% } %>
 <div id="mainContent">
-    <ol>
+    <h1>你好, <%= user.username %></h1>
+    <ol class="books">
     <% books.forEach(book => { %>
-        <li><a href="/ink/bookdetail/<%= book.id %>"><%= book.name %></a> <%= book.authorName %></li>
+        <li>
+            <a href="/ink/bookchapter/<%= book.id %>/<%= book.readingChapterIndex <= -1 ? 0 : book.readingChapterIndex %>"><%= book.name %></a>
+            <% if (book.contentChanged) { %><span class="redpoint"></span><% } %> 
+            <span class="toRight bookAutherName"><%= book.authorName %></span>
+        </li>
     <% }); %>
     </ol>
 </div>
 <div class="navbar">
-    <span class="anchor toRight" data-href="/ink/logout">退出</span>
+    <span class="anchor" data-href="/ink/logout">退出</span>
+    <span class="disabledAnchor toRight">下一页</span>
+    <span class="disabledAnchor toRight">上一页</span>
 </div>
 <%- include('./partials/footer') %>

@@ -1,16 +1,25 @@
 <%- include('./partials/header'); %>
-<ul>
-    <li><%= book.name %> </li>
-    <li><%= book.authorName %> </li>
-    <li><%= book.lastChapter %> </li>
-    <li><%= book.summary %> </li>
-</ul>
-<div>目录
-<% book.spine.forEach((chapter, index) => { %>
-   <p><a href="/ink/bookchapter/<%= book.id %>/<%= index %>"><%= chapter.name %></a></p> 
-<% }); %>
+<div id="mainContent">
+    <div>
+        <h1><%= book.name %></h1>
+        <ul>
+            <li>作者：<%= book.authorName %></li>
+            <li>最新章节：<%= book.lastChapter %></li>
+        </ul>
+    </div>
+    <div>
+        <h2 class="title">目录</h2>
+        <% for (var i = 0; i < book.spine.length; i++) {
+            var chapterIndex = book.reverseOrder ? book.spine.length - 1 - i : i;
+            var chapterName = book.spine[chapterIndex].name;
+        %>
+            <p><a href="/ink/bookchapter/<%= book.id %>/<%= chapterIndex %>"><%= chapterName %></a></p> 
+        <% } %> 
+    </div>
 </div>
 <div class="navbar">
     <span class="anchor" data-href="/ink/">首页</span>
+    <span class="disabledAnchor toRight">下一页</span>
+    <span class="disabledAnchor toRight">上一页</span>
 </div>
 <%- include('./partials/footer') %>

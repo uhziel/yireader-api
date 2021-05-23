@@ -1,11 +1,9 @@
 .navbar {
     position: fixed;
-    right: 0;
-    left: 0;
+    width: 100%;
     bottom: 0;
     height: 35px;
     line-height: 35px;
-    padding: 0 10px;
     background-color: #fff;
     border-top: 2px solid #7f7f7f;
     font-size: 20px;
@@ -20,7 +18,23 @@
     float: right;
 }
 
+.bookAutherName {
+    color: gray;
+    vertical-align: text-bottom;
+}
+
+.redpoint{
+    vertical-align: top;
+    display:inline-block;
+    height:10px;
+    width:10px;
+    border-radius:10px;
+    -webkit-border-radius: 10px;
+    background: black;
+}
+
 #mainContent {
+    margin: 8px;
     margin-bottom: 30px;
 }
 
@@ -31,6 +45,7 @@
 body {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    margin: 0;
 }
 
 body, input, button, select {
@@ -47,4 +62,32 @@ body, input, button, select {
 
 .textCenter {
     text-align: center!important;
+}
+
+ul, ol {
+    list-style-type: none;
+    margin: 5px 0;
+    padding: 0;
+}
+
+.books li:hover {
+    border-bottom: 2px solid black;
+}
+
+a {
+    color: black;
+    text-decoration: none;
+    border: none;
+    box-shadow: none;
+}
+
+.books li {
+    margin-top: 15px;
+    border-bottom: 2px dashed black;
+} 
+
+.title {
+    background-color: black;
+    color: white;
+    padding: 0 5px;
 }

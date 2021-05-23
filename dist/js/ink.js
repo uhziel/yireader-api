@@ -53,7 +53,9 @@ function changeFontSize(delta) {
 
 function setFontSizeStyle(fontSize) {
   var container = document.getElementById('chapterContent');
-  container.style = "font-size: " + fontSize + "em;";
+  if (container) {
+    container.style = "font-size: " + fontSize + "em;";
+  }
 }
 
 function attachEventListeners() {

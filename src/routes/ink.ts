@@ -43,6 +43,7 @@ router.get(
   jwtCookie,
   asyncMiddleware(async (req: Request, res: Response) => {
     debug(req.cookies);
+    res.locals.title = '易读';
     res.locals.user = req.user;
     res.locals.books = await queryBooks(req.user.id);
     res.render('index');
@@ -54,6 +55,7 @@ router.get(
   jwtCookie,
   asyncMiddleware(async (req, res) => {
     res.locals.book = await queryBook(req.params.bookId, req.user.id);
+    res.locals.title = `${res.locals.book.name} - 易读`;
     res.render('bookdetail');
   })
 );
@@ -71,11 +73,13 @@ router.get(
       },
       req.user.id
     );
+    res.locals.title = `${res.locals.bookChapter.name} - 易读`;
     res.render('bookchapter');
   })
 );
 
 router.get('/login', (_req, res) => {
+  res.locals.title = '登陆 - 易读';
   res.render('login');
 });
 
