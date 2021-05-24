@@ -50,6 +50,10 @@ router.get(
   })
 );
 
+router.get('/device', (req: Request, res: Response) => {
+  res.render('device');
+});
+
 router.get(
   '/bookdetail/:bookId',
   jwtCookie,

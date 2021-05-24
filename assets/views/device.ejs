@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>设备信息</title>
+        <script src="/js/es5-shim@4.5.15/es5-shim.min.js"></script>
+    </head>
+    <body>
+        <pre id="out"></pre>
+        <div>
+            <% var absoluteLengthUnits = [
+                ['2.54cm', '2.54cm(1in)'],
+                ['25.4mm', '25.4mm(1in)'],
+                ['1in', '1in'],
+                ['72pt', '72pt(1in)'],
+                ['96px', '96px'],
+                ['300px', '300px'],
+            ];%> 
+            <% absoluteLengthUnits.forEach(unit => { %>
+                <div style="width: <%= unit[0] %>; height: 1.5em; background: black; color: white; margin: 2px 100px;"><%= unit[1] %></div>    
+            <% }); %> 
+        </div>
+        <script>
+            window.onload = function () {
+                var out = document.getElementById("out");
+                function append(content) {
+                    out.textContent += content + "\n";
+                }
+                append("window.devicePixelRatio: " + window.devicePixelRatio);
+                append("screen.width: " + screen.width);
+                append("screen.height: " + screen.height);
+                append("document.documentElement.clientWidth: " + document.documentElement.clientWidth);
+                append("document.documentElement.clientHeight: " + document.documentElement.clientHeight);
+                append("window.innerWidth: " + window.innerWidth);
+                append("window.innerHeight: " + window.innerHeight);
+                append("window.outerWidth: " + window.outerWidth);
+                append("window.outerHeight: " + window.outerHeight);
+            }
+        </script>
+    </body>
+</html>
+    
