@@ -7,54 +7,43 @@ function goTo(clickEvent) {
   window.location = href;
 }
 
-function initShams() {
-  if (!window.localStorage) {
-    var localStorage = {};
-    localStorage.getItem = function() { return null; };
-    localStorage.setItem = function() {};
-    localStorage.removeItem = function() {};
-    window.localStorage = localStorage;
-  }
-}
-
 var defaultUserData = {
-  bookshelf: {},
   theme: {
-    "font-size": 1.83
+    'font-size': 1
   },
   version: 3
 };
 
 var userData = null
 function init() {
-  var userDataStr = localStorage.getItem("userData");
+  var userDataStr = localStorage.getItem('inkUserData');
   if (userDataStr) {
     try {
       userData = JSON.parse(userDataStr);
     } catch(e) {
-      localStorage.removeItem("userData");
+      localStorage.removeItem('inkUserData');
     }
   }
 
   if (!userData) {
     userData = defaultUserData;
-    setFontSizeStyle(userData.theme['font-size']);
   }
+  setFontSizeStyle(userData.theme['font-size']);
 }
 
 function changeFontSize(delta) {
   userData.theme['font-size'] += delta;
-  if (userData.theme['font-size'] < 1.035) {
-    userData.theme['font-size'] = 1.035;
+  if (userData.theme['font-size'] < 1) {
+    userData.theme['font-size'] = 1;
   }
   setFontSizeStyle(userData.theme['font-size']);
-  localStorage.setItem('userData', JSON.stringify(userData));
+  localStorage.setItem('inkUserData', JSON.stringify(userData));
 }
 
 function setFontSizeStyle(fontSize) {
   var container = document.getElementById('chapterContent');
   if (container) {
-    container.style = "font-size: " + fontSize + "em;";
+    container.style.fontSize = fontSize + 'em';
   }
 }
 
@@ -86,7 +75,6 @@ function attachEventListeners() {
 }
 
 window.onload = function () {
-  initShams();
   init();
   attachEventListeners();
 };

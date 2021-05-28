@@ -59,7 +59,24 @@
         <div style="background: black; color: white; margin: 0; padding: 0;">一二三四五六七八九零一二三四五六七八九零一二三四五六七八九零</div>
         <script>
             function hasLocalStorage() {
-                return window.localStorage ? true : false;
+                var has = false;
+                var readFromLocal = false;
+                var real = ''
+                var expected = 'bar';
+                if (window.localStorage) {
+                    real = localStorage.getItem('foo');
+                    if (!real) {  
+                        readFromLocal = false;   
+                        localStorage.setItem('foo', expected);
+                        real = localStorage.getItem('foo');
+                    } else {
+                        readFromLocal = true;
+                    }
+
+                    has = (expected === real);
+                }
+
+                return 'api(' + has + ') local(' + readFromLocal + ') ' + real;
             }
             function hasJSON() {
                 return window.JSON ? true : false;
