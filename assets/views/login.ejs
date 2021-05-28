@@ -1,19 +1,19 @@
 <%- include('./partials/header'); %>
 <%- include('./partials/messages'); %>
+<div id="mainContent">
 <form action="/ink/login" method="POST">
     <h1>登录</h1>
     <ul>
         <li>
-            <label for="username">用户名</label>
-            <input type="text" id="username" name="username" placeholder="用户名" required>        
+            <label for="username">用户</label>
+            <input type="text" id="username" name="username" required>        
         </li>
         <li>
             <label for="password">密码</label>
-            <input type="password" id="password" name="password" placeholder="密码" required>        
-        </li>
-        <li>
-            <button type="submit" >提交</b-button>
+            <input type="password" id="password" name="password" required>        
         </li>
     </ul>
+    <button type="submit" >提交</b-button>
 </form>
+</div>
 <%- include('./partials/footer') %>

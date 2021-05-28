@@ -1,17 +1,58 @@
+input[type="password"],
+input[type="text"] {
+    font-size: 1.4rem;
+    border: 2px solid black;
+}
+
+h1 {
+    margin: 0.5rem 0 0.7rem 0;
+}
+
+html, body {
+    height: 100%;
+}
+
+html {
+    font-size: 15pt;
+}
+
+body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-family: "PingFang SC", -apple-system, "SF UI Text", "Lucida Grande", STheiti, "Microsoft YaHei", sans-serif;
+    margin: 0;    
+}
+
+#app {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+}
+
+#mainContent {
+    padding: 0.2rem 0.2rem 1.5rem 0.2rem;
+    overflow-y: auto;
+}
+
 .navbar {
-    position: fixed;
+    position: absolute;
+    box-sizing: border-box;
+    padding: 0 0.3rem;
     width: 100%;
     bottom: 0;
-    height: 35px;
-    line-height: 35px;
+    height: 1.5rem;
+    line-height: 1.5rem;
     background-color: #fff;
     border-top: 2px solid #7f7f7f;
-    font-size: 20px;
+    font-size: .6rem;
 }
 
 .navbar span {
     cursor: pointer;
-    padding: 0 10px;
+    padding: 0 0.2rem;
 }
 
 .toRight {
@@ -33,25 +74,8 @@
     background: black;
 }
 
-#mainContent {
-    margin: 8px;
-    margin-bottom: 30px;
-}
-
 #chapterContent {
     text-indent: 2em;
-}
-
-body {
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    margin: 0;
-}
-
-body, input, button, select {
-    font-family: -system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Cantarell,
-        "DejaVu Sans", sans-serif, "Apple Color Emoji", "Noto Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    font-size: 30px;
 }
 
 .disabledAnchor {
@@ -66,8 +90,12 @@ body, input, button, select {
 
 ul, ol {
     list-style-type: none;
-    margin: 5px 0;
+    margin: 0.5rem;
     padding: 0;
+}
+
+li {
+   margin: 0.3rem 0; 
 }
 
 .books li:hover {
@@ -90,4 +118,17 @@ a {
     background-color: black;
     color: white;
     padding: 0 5px;
+    margin: 0.8rem 0 0.5rem 0;
+}
+
+form button {
+    margin: 0 3rem;
+}
+
+.catalog {
+    margin: 0 0.3rem;
+}
+
+.catalog p {
+    margin: 0.5rem 0;
 }

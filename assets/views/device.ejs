@@ -6,9 +6,43 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
         <title>设备信息</title>
         <script src="/js/es5-shim@4.5.15/es5-shim.min.js"></script>
+        <style>
+            body {
+                font-size: 12pt;
+            }
+            .ems li {
+                font-size: 1.3em;
+            }
+            .rems li {
+                font-size: 4rem;
+            }
+        </style>
     </head>
     <body>
+        <pre><%= headersText %></pre>
         <pre id="out"></pre>
+        <ul class="ems">
+            <li>
+                One
+                <ul>
+                    <li>Two</li>
+                        <ul>
+                            <li>Three</li>
+                        </ul>
+                </ul>
+            </li>
+        </ul>
+        <ul class="rems">
+            <li>
+                One
+                <ul>
+                    <li>Two</li>
+                        <ul>
+                            <li>Three</li>
+                        </ul>
+                </ul>
+            </li>
+        </ul>
         <div>
             <% var absoluteLengthUnits = [
                 ['2.54cm', '2.54cm(1in)'],
@@ -19,10 +53,17 @@
                 ['300px', '300px'],
             ];%> 
             <% absoluteLengthUnits.forEach(unit => { %>
-                <div style="width: <%= unit[0] %>; height: 1.5em; background: black; color: white; margin: 2px 100px;"><%= unit[1] %></div>    
+                <div style="width: <%= unit[0] %>; height: 1.5em; background: black; color: white; margin: 2px 0;"><%= unit[1] %></div>    
             <% }); %> 
         </div>
+        <div style="background: black; color: white; margin: 0; padding: 0;">一二三四五六七八九零一二三四五六七八九零一二三四五六七八九零</div>
         <script>
+            function hasLocalStorage() {
+                return window.localStorage ? true : false;
+            }
+            function hasJSON() {
+                return window.JSON ? true : false;
+            }
             window.onload = function () {
                 var out = document.getElementById("out");
                 function append(content) {
@@ -33,10 +74,13 @@
                 append("screen.height: " + screen.height);
                 append("document.documentElement.clientWidth: " + document.documentElement.clientWidth);
                 append("document.documentElement.clientHeight: " + document.documentElement.clientHeight);
-                append("window.innerWidth: " + window.innerWidth);
-                append("window.innerHeight: " + window.innerHeight);
+                append("[layout viewport]window.innerWidth: " + window.innerWidth);
+                append("[layout viewport]window.innerHeight: " + window.innerHeight);
                 append("window.outerWidth: " + window.outerWidth);
                 append("window.outerHeight: " + window.outerHeight);
+
+                append("localStorage: " + hasLocalStorage());
+                append("JSON: " + hasJSON());
             }
         </script>
     </body>

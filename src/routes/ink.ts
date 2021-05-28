@@ -51,6 +51,9 @@ router.get(
 );
 
 router.get('/device', (req: Request, res: Response) => {
+  const headersText = JSON.stringify(req.headers, null, 4);
+  debug('req.headers: %s', headersText);
+  res.locals.headersText = headersText;
   res.render('device');
 });
 
