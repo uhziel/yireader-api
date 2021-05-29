@@ -81,6 +81,20 @@
             function hasJSON() {
                 return window.JSON ? true : false;
             }
+            function hasElementScrollTo() {
+                var bodyElem = document.getElementsByTagName('body')[0];
+                return bodyElem.scrollTo ? true : false;
+            }
+            function hasElementScrollBy() {
+                var bodyElem = document.getElementsByTagName('body')[0];
+                return bodyElem.scrollBy ? true : false;
+            }
+            function hasMathTrunc() {
+                return Math.trunc ? true : false;
+            }
+            function hasMathFloor() {
+                return Math.floor ? true : false;
+            }
             window.onload = function () {
                 var out = document.getElementById("out");
                 function append(content) {
@@ -98,6 +112,10 @@
 
                 append("localStorage: " + hasLocalStorage());
                 append("JSON: " + hasJSON());
+                append("element.scrollTo(): " + hasElementScrollTo());
+                append("element.scrollBy(): " + hasElementScrollBy());
+                append("Math.trunc(): " + hasMathTrunc());
+                append("Math.floor(): " + hasMathFloor());
             }
         </script>
     </body>

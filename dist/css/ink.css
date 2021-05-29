@@ -5,7 +5,20 @@ input[type="text"] {
 }
 
 h1 {
-    margin: 0.5rem 0 0.7rem 0;
+    margin: 0.4em 0 0.6em 0;
+    padding: 0;
+    font-size: 2em;
+    line-height: 1;
+}
+
+p {
+    margin: 1em 0;
+    padding: 0;
+    line-height: 1;
+}
+
+p:last-child {
+    margin-bottom: 0;    
 }
 
 html, body {
@@ -13,7 +26,7 @@ html, body {
 }
 
 html {
-    font-size: 15pt;
+    font-size: 18pt;
 }
 
 body {
@@ -33,11 +46,13 @@ body {
 }
 
 #mainContent {
+    box-sizing: border-box;
+    height: 100%;
     padding: 0.2rem 0.2rem 1.5rem 0.2rem;
     overflow-y: auto;
 }
 
-.navbar {
+#navbar {
     position: absolute;
     box-sizing: border-box;
     padding: 0 0.3rem;
@@ -48,9 +63,9 @@ body {
     background-color: #fff;
     border-top: 2px solid #7f7f7f;
     font-size: .6rem;
-}
+}  
 
-.navbar span {
+#navbar span {
     cursor: pointer;
     padding: 0 0.2rem;
 }

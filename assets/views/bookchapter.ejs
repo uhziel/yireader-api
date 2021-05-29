@@ -5,7 +5,7 @@
         <%- bookChapter.data %>
     </div>
 </div>
-<div class="navbar">
+<div id="navbar">
     <% if (bookChapter.next) { %> 
         <span class="anchor toRight" data-href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.next.index %>")>下一章</span>
     <% } else { %>
@@ -18,8 +18,8 @@
     <% } %>
     <span class="anchor" data-href="/ink/">首页</span>
     <span class="anchor" data-href="/ink/bookdetail/<%= bookId %>">目录</span>
-    <span onclick="changeFontSize(0.1)">放大</span>
-    <span onclick="changeFontSize(-0.1)">缩小</span>
+    <span onclick="changeFontSize(0.2)">放大</span>
+    <span onclick="changeFontSize(-0.2)">缩小</span>
 </div>
 
 <%- include('./partials/footer') %>
