@@ -1,6 +1,6 @@
 input[type="password"],
 input[type="text"] {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     border: 2px solid black;
 }
 
@@ -161,5 +161,6 @@ a {
 }
 
 form button {
-    margin: 0 3rem;
+    margin: 1rem 3rem;
+    font-size: 1rem;
 }
