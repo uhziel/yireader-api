@@ -95,10 +95,25 @@
             function hasMathFloor() {
                 return Math.floor ? true : false;
             }
+            function hasDocumentCookie() {
+                return document.cookie ? true: false;
+            }
+            function hasStringSplit() {
+                return "".split ? true: false;
+            }
+            function hasStringStartsWith() {
+                return "".startsWith ? true: false;
+            }
+            function hasArrayFind() {
+                return [].find ? true: false;
+            }
             window.onload = function () {
                 var out = document.getElementById("out");
                 function append(content) {
                     out.textContent += content + "\n";
+                }
+                if (!document.cookie) {
+                    document.cookie = 'foo=bar';
                 }
                 append("window.devicePixelRatio: " + window.devicePixelRatio);
                 append("screen.width: " + screen.width);
@@ -116,6 +131,10 @@
                 append("element.scrollBy(): " + hasElementScrollBy());
                 append("Math.trunc(): " + hasMathTrunc());
                 append("Math.floor(): " + hasMathFloor());
+                append("document.cookie: " + hasDocumentCookie());
+                append("String.split: " + hasStringSplit());
+                append("String.startsWith: " + hasStringStartsWith());
+                append("Array.find: " + hasArrayFind());
             }
         </script>
     </body>

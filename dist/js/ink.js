@@ -8,16 +8,40 @@ function goTo(clickEvent) {
   window.location = href;
 }
 
-var defaultUserData = {
-  theme: {
-    'font-size': 1
-  },
-  version: 3
-};
-
-var userData = null
+var defaultFontSize = 1;
+var maxAgeFontSizeCookie = 946080000; //fontSize有效期为30年 30*60*60*24*365
+var curFontSize = 1;  //单位：em
 var step = window.innerWidth; //一次翻页的长度
 var navbarHeight = 30; // 单位: px
+
+function initFontSize() {
+  var cookies = document.cookie;
+  if (!cookies) {
+    return defaultFontSize;
+  }
+  var r1 = cookies.split('; ');
+  if (r1.length <= 0) {
+    return defaultFontSize;
+  }
+
+  for (var i = 0; i < r1.length; i++) {
+    var r2 = r1[i].split('=');
+    if (r2[0] === 'fontSize') {
+      return parseFloat(r2[1]);
+    }
+  }
+
+  return defaultFontSize;
+}
+
+function setFontSize(fontSize) {
+  if (fontSize < 1) {
+    fontSize = 1;
+  }
+  var cookie = 'fontSize=' + fontSize + '; path=/ink ; max-age=' + maxAgeFontSizeCookie;
+  document.cookie = cookie;
+  curFontSize = fontSize;
+}
 
 function initNavbarHeight() {
   var navbar = document.getElementById('navbar');
@@ -99,7 +123,7 @@ function updateScrollBottomStatus() {
 }
 
 function scrollToEnd() {
-  var hashValue = window.location.hash
+  var hashValue = window.location.hash;
   if (hashValue === '#end') {
     var scrollBox = document.getElementById('scrollBox');
     if (scrollBox) {
@@ -109,31 +133,16 @@ function scrollToEnd() {
 }
 
 function init() {
-  var userDataStr = localStorage.getItem('inkUserData');
-  if (userDataStr) {
-    try {
-      userData = JSON.parse(userDataStr);
-    } catch(e) {
-      localStorage.removeItem('inkUserData');
-    }
-  }
-
-  if (!userData) {
-    userData = defaultUserData;
-  }
+  curFontSize = initFontSize();
   initNavbarHeight();
-  setFontSizeStyle(userData.theme['font-size']);
+  setFontSizeStyle(curFontSize);
   updateScrollBottomStatus();
   scrollToEnd();
 }
 
 function changeFontSize(delta) {
-  userData.theme['font-size'] += delta;
-  if (userData.theme['font-size'] < 1) {
-    userData.theme['font-size'] = 1;
-  }
-  setFontSizeStyle(userData.theme['font-size']);
-  localStorage.setItem('inkUserData', JSON.stringify(userData));
+  setFontSize(curFontSize + delta);
+  setFontSizeStyle(curFontSize);
 }
 
 function setFontSizeStyle(fontSize) {
