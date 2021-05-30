@@ -55,6 +55,9 @@ app.set('view options', {compileDebug: true, debug: true, strict: false});
 import serverTiming from 'server-timing';
 app.use(serverTiming());
 
+import inkDeviceRedirect from './middlewares/inkDeviceRedirect';
+app.use(inkDeviceRedirect);
+
 app.use(express.json());
 
 const fingerprintRegExp = /\.[0-9a-f]{8}\./;
