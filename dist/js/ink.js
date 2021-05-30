@@ -11,7 +11,7 @@ function goTo(clickEvent) {
 var defaultFontSize = 1;
 var maxAgeFontSizeCookie = 946080000; //fontSize有效期为30年 30*60*60*24*365
 var curFontSize = 1;  //单位：em
-var step = window.innerWidth; //一次翻页的长度
+var step = window.innerWidth; //一次翻页的长度。单位：px
 var navbarHeight = 30; // 单位: px
 
 function initFontSize() {
@@ -145,6 +145,26 @@ function changeFontSize(delta) {
   setFontSizeStyle(curFontSize);
 }
 
+function fillEmptyBoxHeight() {
+  var scrollBox = document.getElementById('scrollBox');
+  if (!scrollBox) {
+    return;
+  }
+  var emptyBox = document.getElementById('emptyBox');
+  if (!emptyBox) {
+    return;
+  }
+
+  var r1 = scrollBox.scrollHeight / step;
+  var r2 = Math.floor(r1);
+  var emptyBoxHeight = step * (r2 + 1) - scrollBox.scrollHeight;
+  if (emptyBoxHeight < step * 0.99) {
+    emptyBox.style.height = emptyBoxHeight + 'px';
+  } else {
+    emptyBox.style.height = '0px';
+  }
+}
+
 function setFontSizeStyle(fontSize) {
   var container = document.getElementsByClassName('mainContent')[0];
   if (container) {
@@ -174,6 +194,7 @@ function setFontSizeStyle(fontSize) {
     container.style.paddingTop = paddingTop + 'px';
     //alert('height paddingTop:' + containerStyle.paddingTop + ' paddingBottom ' + containerStyle.paddingBottom + ' height ' + containerStyle.height);
     //alert('after change font size: height ' + container.scrollHeight + ' fontsize ' + containerStyle.fontSize + ' paddingTop ' + containerStyle.paddingTop);
+    fillEmptyBoxHeight();
   }
 }
 
