@@ -27,6 +27,49 @@ function initNavbarHeight() {
   }
 }
 
+function updateScrollDownBottomStatus() {
+  var scrollDownBottom = document.getElementById('scrollDown');
+  if (!scrollDownBottom) {
+    return;
+  }
+
+  var scrollBox = document.getElementById('scrollBox');
+  if (!scrollBox) {
+    return;
+  }
+
+  var maxScrollTop = scrollBox.scrollHeight - step;
+
+  if (Math.abs(scrollBox.scrollTop - maxScrollTop) < 1) {
+    scrollDownBottom.className = 'disabledAnchor toRight';
+  } else {
+    scrollDownBottom.className = 'toRight';
+  }
+}
+
+function updateScrollUpBottomStatus() {
+  var scrollUpBottom = document.getElementById('scrollUp');
+  if (!scrollUpBottom) {
+    return;
+  }
+
+  var scrollBox = document.getElementById('scrollBox');
+  if (!scrollBox) {
+    return;
+  }
+
+  if (scrollBox.scrollTop < 1) {
+    scrollUpBottom.className = 'disabledAnchor toRight';
+  } else {
+    scrollUpBottom.className = 'toRight';
+  }
+}
+
+function updateScrollBottomStatus() {
+  updateScrollDownBottomStatus();
+  updateScrollUpBottomStatus();
+}
+
 function init() {
   var userDataStr = localStorage.getItem('inkUserData');
   if (userDataStr) {
@@ -42,6 +85,7 @@ function init() {
   }
   initNavbarHeight();
   setFontSizeStyle(userData.theme['font-size']);
+  updateScrollBottomStatus();
 }
 
 function changeFontSize(delta) {
@@ -115,6 +159,9 @@ function attachEventListeners() {
         scrollContent(isClickedRightSide(window.innerWidth, ev.clientX) ? 'down': 'up');
       });
     }
+    container.addEventListener('scroll', function (ev) {
+      updateScrollBottomStatus();
+    });
   }
 
   var anchors = document.getElementsByClassName('anchor');
