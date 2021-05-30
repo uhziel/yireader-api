@@ -27,6 +27,14 @@ function initNavbarHeight() {
   }
 }
 
+function disableScrollBottom(elem, disable) {
+  if (disable) {
+    elem.className = 'disabledAnchor toRight';
+  } else {
+    elem.className = 'toRight';
+  }
+}
+
 function updateScrollDownBottomStatus() {
   var scrollDownBottom = document.getElementById('scrollDown');
   if (!scrollDownBottom) {
@@ -38,13 +46,23 @@ function updateScrollDownBottomStatus() {
     return;
   }
 
-  var maxScrollTop = scrollBox.scrollHeight - step;
+  scrollDownBottom.setAttribute('data-action', 'scroll');
 
-  if (Math.abs(scrollBox.scrollTop - maxScrollTop) < 1) {
-    scrollDownBottom.className = 'disabledAnchor toRight';
-  } else {
-    scrollDownBottom.className = 'toRight';
+  var maxScrollTop = scrollBox.scrollHeight - step;
+  var disable = Math.abs(scrollBox.scrollTop - maxScrollTop) < 1;
+  if (disable) {
+    var bookchapter = document.getElementById('bookchapter');
+    if (bookchapter) {
+      var dataHref = scrollDownBottom.getAttribute('data-href');
+      if (dataHref) {
+        disable = false;
+
+        scrollDownBottom.setAttribute('data-action', 'openurl');
+      }
+    }
   }
+
+  disableScrollBottom(scrollDownBottom, disable);
 }
 
 function updateScrollUpBottomStatus() {
@@ -58,16 +76,36 @@ function updateScrollUpBottomStatus() {
     return;
   }
 
-  if (scrollBox.scrollTop < 1) {
-    scrollUpBottom.className = 'disabledAnchor toRight';
-  } else {
-    scrollUpBottom.className = 'toRight';
+  scrollUpBottom.setAttribute('data-action', 'scroll');
+
+  var disable = scrollBox.scrollTop < 1;
+  if (disable) {
+    var bookchapter = document.getElementById('bookchapter');
+    if (bookchapter) {
+      var dataHref = scrollUpBottom.getAttribute('data-href');
+      if (dataHref) {
+        disable = false;
+        scrollUpBottom.setAttribute('data-action', 'openurl');
+      }
+    }
   }
+
+  disableScrollBottom(scrollUpBottom, disable);
 }
 
 function updateScrollBottomStatus() {
   updateScrollDownBottomStatus();
   updateScrollUpBottomStatus();
+}
+
+function scrollToEnd() {
+  var hashValue = window.location.hash
+  if (hashValue === '#end') {
+    var scrollBox = document.getElementById('scrollBox');
+    if (scrollBox) {
+      scrollBox.scrollTop += scrollBox.scrollHeight;
+    }
+  }
 }
 
 function init() {
@@ -86,6 +124,7 @@ function init() {
   initNavbarHeight();
   setFontSizeStyle(userData.theme['font-size']);
   updateScrollBottomStatus();
+  scrollToEnd();
 }
 
 function changeFontSize(delta) {
@@ -135,12 +174,28 @@ function getPxValue(pxText) {
   return parseInt(numText);
 }
 
-function scrollContent(direction) {
+function _scrollContent(scrollBottom) {
   var scrollBox = document.getElementById('scrollBox');
   if (scrollBox) {
-    var offfsetY = step * (direction === 'down' ? 1 : -1);
-    scrollBox.scrollTop += offfsetY;
+    var action = scrollBottom.getAttribute('data-action');
+    if (action === 'scroll') {
+      var offfsetY = step * (scrollBottom.id === 'scrollDown' ? 1 : -1);
+      scrollBox.scrollTop += offfsetY;
+    } else {
+      var href = scrollBottom.getAttribute('data-href');
+      if (href) {
+        if (scrollBottom.id === 'scrollUp') {
+          href += '#end';
+        }
+        window.location = href;
+      }
+    }
   }
+}
+
+function scrollContent(ev) {
+  ev.stopPropagation();
+  _scrollContent(ev.target);
 }
 
 function attachEventListeners() {
@@ -156,7 +211,10 @@ function attachEventListeners() {
           isClickedRightSide(window.innerWidth, ev.clientX)
         );
         ev.stopPropagation();
-        scrollContent(isClickedRightSide(window.innerWidth, ev.clientX) ? 'down': 'up');
+        var scrollBottom = document.getElementById(isClickedRightSide(window.innerWidth, ev.clientX) ? 'scrollDown': 'scrollUp');
+        if (scrollBottom) {
+          _scrollContent(scrollBottom);
+        }
       });
     }
     container.addEventListener('scroll', function (ev) {
@@ -170,6 +228,15 @@ function attachEventListeners() {
   for (index = 0; index < anchors.length; index++) {
     var anchor = anchors[index];
     anchor.addEventListener('click', goTo);
+  }
+
+  var scrollDownBottom = document.getElementById('scrollDown')
+  if (scrollDownBottom) {
+    scrollDownBottom.onclick = scrollContent;
+  }
+  var scrollUpBottom = document.getElementById('scrollUp')
+  if (scrollUpBottom) {
+    scrollUpBottom.onclick = scrollContent;
   }
 }
 

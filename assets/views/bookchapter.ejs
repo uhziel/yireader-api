@@ -8,16 +8,16 @@
     </div>
 </div>
 <div id="navbar">
+    <span id="scrollDown" class="toRight"
     <% if (bookChapter.next) { %> 
-        <span class="anchor toRight" data-href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.next.index %>")>下一章</span>
-    <% } else { %>
-        <span class="disabledAnchor toRight">下一章</span>
+        data-href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.next.index %>"
     <% } %>
+    >下一页</span>
+    <span id="scrollUp" class="toRight"
     <% if (bookChapter.prev) { %> 
-        <span class="anchor toRight" data-href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.prev.index %>")>上一章</span>
-    <% } else { %>
-        <span class="disabledAnchor toRight">上一章</span>
+        data-href="/ink/bookchapter/<%= bookId %>/<%= bookChapter.prev.index %>"
     <% } %>
+    >上一页</span>
     <span class="anchor" data-href="/ink/">首页</span>
     <span class="anchor" data-href="/ink/bookdetail/<%= bookId %>">目录</span>
     <span onclick="changeFontSize(0.2)">放大</span>
