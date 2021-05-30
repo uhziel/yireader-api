@@ -1,0 +1,166 @@
+input[type="password"],
+input[type="text"] {
+    font-size: 1.2rem;
+    border: 2px solid black;
+}
+
+h1 {
+    margin: 0.2em 0 0.3em 0;
+    padding: 0;
+    font-size: 2em;
+    line-height: 1;
+}
+
+h2 {
+    margin: .3em 0;
+    padding: 0.2em 0;
+    font-size: 1em;
+    line-height: 1;
+}
+
+p {
+    margin: 1em 0;
+    padding: 0;
+    line-height: 1;
+}
+
+p:first-child {
+    margin-top: 0;
+}
+
+p:last-child {
+    margin-bottom: 0;    
+}
+
+html, body {
+    height: 100%;
+}
+
+html {
+    font-size: 18pt;
+}
+
+body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-family: "PingFang SC", -apple-system, "SF UI Text", "Lucida Grande", STheiti, "Microsoft YaHei", sans-serif;
+    margin: 0;    
+}
+
+#app {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+}
+
+.mainContent {
+    box-sizing: border-box;
+    height: 100%;
+    padding: 0.2rem 0.2rem 1.5rem 0.2rem;
+}
+
+#scrollBox {
+    height: 100%;
+    overflow-y: auto;
+}
+
+#navbar {
+    position: absolute;
+    box-sizing: border-box;
+    padding: 0 0.3rem;
+    width: 100%;
+    bottom: 0;
+    height: 1.5rem;
+    line-height: 1.5rem;
+    background-color: #fff;
+    border-top: 2px solid #7f7f7f;
+    font-size: .6rem;
+}  
+
+#navbar span {
+    cursor: pointer;
+    padding: 0 0.2rem;
+}
+
+.toRight {
+    float: right;
+}
+
+.bookAutherName {
+    color: gray;
+    vertical-align: text-bottom;
+}
+
+.redpoint{
+    vertical-align: top;
+    display:inline-block;
+    height:10px;
+    width:10px;
+    border-radius:10px;
+    -webkit-border-radius: 10px;
+    background: black;
+}
+
+#chapterContent {
+    text-indent: 2em;
+}
+
+.disabledAnchor {
+    pointer-events: none !important;
+    cursor: default;
+    color:Gray;
+}
+
+.textCenter {
+    text-align: center!important;
+}
+
+ul, ol {
+    list-style-type: none;
+    margin: 0 0 0 0.2em;
+    padding: 0;
+}
+
+li {
+    margin: 0;
+    padding: 0;
+    font-size: 1em;
+    line-height: 1;
+}
+
+.books li:hover {
+    border-bottom: 2px solid black;
+}
+
+a {
+    color: black;
+    text-decoration: none;
+    border: none;
+    box-shadow: none;
+}
+
+.books li {
+    margin: 1em 0;
+}
+
+.books li:first-child {
+    margin-top: 0;
+}
+
+.books li:last-child {
+    margin-bottom: 0;
+}
+
+.title {
+    background-color: black;
+    color: white;
+    padding-left: 0.2em;
+}
+
+form button {
+    margin: 1rem 3rem;
+    font-size: 1rem;
+}

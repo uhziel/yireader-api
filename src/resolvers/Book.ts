@@ -4,13 +4,12 @@ import {parseBook, ReqDataDetail} from '../BookSourceParser';
 import {getAuthorId} from '../resolvers/Author';
 import {_createWebResource} from '../resolvers/WebResource';
 import User from '../models/User';
-import fetchMgr from '../BookFetchMgr';
 import BookChapter from '../models/BookChapter';
 import {Types} from 'mongoose';
-import GCMgr from '../BookGCMgr';
 import {GraphQLContext} from '.';
 import {Response} from 'express';
 import WebResource from '../models/WebResource';
+import {queryBooks} from '../services/Book';
 
 interface BookInfo {
   name: string;
@@ -25,54 +24,8 @@ interface BookByInfoInput {
   info: BookInfo;
 }
 
-const FETCH_INTERVAL = 10 * 60 * 1000; // 拉取书数据的最小间隔，单位：毫秒
-const TMP_BOOK_LIFETIME = 24 * 60 * 60 * 1000; // 临时书的生存时间。单位：毫秒
-
 export const books = async (_: unknown, context: GraphQLContext) => {
-  const user = await User.findById(context.req.user.id, 'books tmpBooks')
-    .lean()
-    .populate({
-      path: 'books',
-      populate: {
-        path: 'author',
-      },
-    });
-  if (!user) {
-    throw new Error('玩家信息不对，无法拉取其书柜信息');
-  }
-  const now = Date.now();
-  for (const book of user.books as BookInterface[]) {
-    book.id = book._id;
-    book.inBookshelf = true;
-    book.authorName = book.author.name;
-    if (book.cover) {
-      book.coverUrl = '/webresource/' + book.cover.toString();
-    }
-    if (book.readingChapterIndex > -1) {
-      const chapter: ChapterEntry = book.spine[book.readingChapterIndex];
-      if (chapter) {
-        book.readingChapter = {
-          index: book.readingChapterIndex,
-          name: chapter.name,
-        };
-      }
-    }
-    const timeDiff = now - book.fetchedAt.valueOf();
-    if (timeDiff > FETCH_INTERVAL) {
-      if (!fetchMgr.isFetching(book.id)) {
-        fetchMgr.add(book.id);
-      }
-    }
-  }
-
-  if (user.tmpBooks.length > 0) {
-    const bookId: Types.ObjectId = user.tmpBooks[0];
-    const timeDiff = now - bookId.getTimestamp().valueOf();
-    if (timeDiff > TMP_BOOK_LIFETIME) {
-      GCMgr.add(context.req.user.id, bookId.toHexString());
-    }
-  }
-  return user.books;
+  return await queryBooks(context.req.user.id);
 };
 
 async function bookFromDb(bookId: string, userId: string, res: Response) {
