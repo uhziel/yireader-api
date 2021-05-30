@@ -3,6 +3,7 @@ function isClickedRightSide(width, x) {
 }
 
 function goTo(clickEvent) {
+  clickEvent.stopPropagation();
   var href = clickEvent.target.getAttribute('data-href');
   window.location = href;
 }
@@ -53,11 +54,16 @@ function changeFontSize(delta) {
 }
 
 function setFontSizeStyle(fontSize) {
-  var container = document.getElementById('mainContent');
+  var container = document.getElementsByClassName('mainContent')[0];
   if (container) {
+    var bookchapter = document.getElementById('bookchapter');
+
     var containerStyle = window.getComputedStyle(container);
     //alert('before change font size: height ' + container.scrollHeight + ' fontsize ' + containerStyle.fontSize + ' paddingTop ' + containerStyle.paddingTop);
-    container.style.fontSize = fontSize + 'em';
+    if (bookchapter) {
+      container.style.fontSize = fontSize + 'em';
+    }
+
     var fontSize = getPxValue(containerStyle.fontSize);
     var r1 = (container.clientHeight - navbarHeight) / fontSize; // 获取大概可以显示多少行，这个值大概率会带小数点
     var r2 = Math.floor(r1); // 获取整数的行数
@@ -85,20 +91,30 @@ function getPxValue(pxText) {
   return parseInt(numText);
 }
 
+function scrollContent(direction) {
+  var scrollBox = document.getElementById('scrollBox');
+  if (scrollBox) {
+    var offfsetY = step * (direction === 'down' ? 1 : -1);
+    scrollBox.scrollTop += offfsetY;
+  }
+}
+
 function attachEventListeners() {
-  var container = document.getElementById('mainContent');
+  var container = document.getElementById('scrollBox');
 
   if (container) {
-    container.addEventListener('click', function (ev) {
-      console.log('clientX:', ev.clientX, ' clientY:', ev.clientY);
-      console.log(
-        'isClickedRightSide:',
-        isClickedRightSide(window.innerWidth, ev.clientX)
-      );
-      var offsetY = step *
-        (isClickedRightSide(window.innerWidth, ev.clientX) ? 1 : -1);
-      container.scrollTop += offsetY;
-    });
+    var bookchapter = document.getElementById('bookchapter');
+    if (bookchapter) {
+      container.addEventListener('click', function (ev) {
+        console.log('clientX:', ev.clientX, ' clientY:', ev.clientY);
+        console.log(
+          'isClickedRightSide:',
+          isClickedRightSide(window.innerWidth, ev.clientX)
+        );
+        ev.stopPropagation();
+        scrollContent(isClickedRightSide(window.innerWidth, ev.clientX) ? 'down': 'up');
+      });
+    }
   }
 
   var anchors = document.getElementsByClassName('anchor');

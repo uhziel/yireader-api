@@ -1,19 +1,21 @@
 <%- include('./partials/header'); %>
-<div id="mainContent">
-    <h1>你好, <%= user.username %></h1>
-    <ol class="books">
-    <% books.forEach(book => { %>
-        <li>
-            <a href="/ink/bookchapter/<%= book.id %>/<%= book.readingChapterIndex <= -1 ? 0 : book.readingChapterIndex %>"><%= book.name %></a>
-            <% if (book.contentChanged) { %><span class="redpoint"></span><% } %> 
-            <span class="toRight bookAutherName"><%= book.authorName %></span>
-        </li>
-    <% }); %>
-    </ol>
+<div id="index" class="mainContent">
+    <div id="scrollBox">
+        <h1>你好, <%= user.username %></h1>
+        <ol class="books">
+        <% books.forEach(book => { %>
+            <li>
+                <a href="/ink/bookchapter/<%= book.id %>/<%= book.readingChapterIndex <= -1 ? 0 : book.readingChapterIndex %>"><%= book.name %></a>
+                <% if (book.contentChanged) { %><span class="redpoint"></span><% } %> 
+                <span class="toRight bookAutherName"><%= book.authorName %></span>
+            </li>
+        <% }); %>
+        </ol>
+    </div>
 </div>
 <div id="navbar">
     <span class="anchor" data-href="/ink/logout">退出</span>
-    <span class="disabledAnchor toRight">下一页</span>
-    <span class="disabledAnchor toRight">上一页</span>
+    <span class="toRight" onclick='scrollContent("down")'>下一页</span>
+    <span class="toRight" onclick='scrollContent("up")'>上一页</span>
 </div>
 <%- include('./partials/footer') %>

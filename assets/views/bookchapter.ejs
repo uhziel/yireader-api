@@ -1,8 +1,10 @@
 <%- include('./partials/header'); %>
-<div id="mainContent">
-    <h1 class="textCenter"><%= bookChapter.name %></h1>
-    <div id="chapterContent">
-        <%- bookChapter.data %>
+<div id="bookchapter" class="mainContent" customFontSize="true">
+    <div id="scrollBox">
+        <h1 class="textCenter"><%= bookChapter.name %></h1>
+        <div id="chapterContent">
+            <%- bookChapter.data %>
+        </div>
     </div>
 </div>
 <div id="navbar">
