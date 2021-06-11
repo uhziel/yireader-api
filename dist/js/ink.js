@@ -1,14 +1,10 @@
-function isClickedRightSide(width, x) {
-  return x > width / 3;
-}
-
 function goTo(clickEvent) {
   clickEvent.stopPropagation();
   var href = clickEvent.target.getAttribute('data-href');
   window.location = href;
 }
 
-var defaultFontSize = 1;
+var defaultFontSize = 1.6;
 var maxAgeFontSizeCookie = 946080000; //fontSize有效期为30年 30*60*60*24*365
 var curFontSize = 1;  //单位：em
 var step = window.innerWidth; //一次翻页的长度。单位：px
@@ -228,6 +224,16 @@ function scrollContent(ev) {
   _scrollContent(ev.target);
 }
 
+function getScrollType(height, y) {
+  if (y < height / 3) {
+    return 'scrollUp';
+  } else if (y > height - 2 * navbarHeight) {
+    return 'none';
+  } else {
+    return 'scrollDown';
+  }
+}
+
 function attachEventListeners() {
   var container = document.getElementById('scrollBox');
 
@@ -236,12 +242,8 @@ function attachEventListeners() {
     if (bookchapter) {
       container.addEventListener('click', function (ev) {
         console.log('clientX:', ev.clientX, ' clientY:', ev.clientY);
-        console.log(
-          'isClickedRightSide:',
-          isClickedRightSide(window.innerWidth, ev.clientX)
-        );
         ev.stopPropagation();
-        var scrollBottom = document.getElementById(isClickedRightSide(window.innerWidth, ev.clientX) ? 'scrollDown': 'scrollUp');
+        var scrollBottom = document.getElementById(getScrollType(window.innerHeight, ev.clientY));
         if (scrollBottom) {
           _scrollContent(scrollBottom);
         }
